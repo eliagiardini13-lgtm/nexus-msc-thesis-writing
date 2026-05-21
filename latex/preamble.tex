@@ -1,0 +1,140 @@
+% ============================================================
+%  NEXUS MSc Thesis — preamble.tex
+%  Packages, formatting, and bibliography configuration.
+%
+%  Adapted generic academic template (Politecnico di Torino /
+%  Beihang University MSc thesis). Politecnico di Torino does not
+%  publish an official LaTeX MSc thesis class; this preamble follows
+%  the formatting brief in the project setup (12pt, A4, Times-like
+%  font, 1.5 spacing, 2.5 cm margins, IEEE-numeric citations).
+%
+%  Engine: pdflatex.  Bibliography: biblatex + biber.
+% ============================================================
+
+% --- Encoding and language ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+% --- Mathematics (loaded before newtxmath to avoid the \Bbbk clash) ---
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% --- Fonts (Times New Roman-like via newtx) ---
+\usepackage{newtxtext}
+\usepackage{newtxmath}
+
+% --- Page layout ---
+\usepackage[a4paper,margin=2.5cm,headheight=15pt]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Units ---
+\usepackage{siunitx}
+
+% --- Graphics, colour, tables ---
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{float}
+
+% --- Captions ---
+\usepackage[font=small,labelfont=bf,labelsep=period]{caption}
+
+% --- Lists ---
+\usepackage{enumitem}
+
+% --- Typography ---
+\usepackage[protrusion=true,expansion=false]{microtype}
+
+% --- Code listings ---
+\usepackage{listings}
+\definecolor{codebg}{gray}{0.97}
+\definecolor{codeframe}{gray}{0.80}
+\definecolor{codekw}{rgb}{0.13,0.13,0.55}
+\definecolor{codecomment}{rgb}{0.30,0.50,0.30}
+\definecolor{codestring}{rgb}{0.55,0.20,0.20}
+\lstdefinestyle{nexus}{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{codekw}\bfseries,
+    commentstyle=\color{codecomment}\itshape,
+    stringstyle=\color{codestring},
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{codeframe},
+    breaklines=true,
+    showstringspaces=false,
+    tabsize=4,
+    captionpos=b,
+    numbers=left,
+    numberstyle=\tiny\color{codeframe},
+    xleftmargin=2em,
+    framexleftmargin=1.5em,
+}
+\lstset{style=nexus}
+% NOTE: an alternative `minted` configuration (syntax highlighting via
+% Pygments) requires compiling with -shell-escape and an installed
+% Pygments. `listings` is used here so the build stays self-contained.
+
+% --- Chapter and section heading style ---
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\Large\bfseries}{\chaptertitlename\ \thechapter}{14pt}{\LARGE}
+\titlespacing*{\chapter}{0pt}{20pt}{24pt}
+% Section numbering: chapter.section (Arabic.Arabic),
+% subsection chapter.section.subsection (Arabic.Arabic.Arabic).
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+% --- Running headers ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\nouppercase{\leftmark}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+% --- Bibliography (biblatex + biber, IEEE numeric) ---
+\usepackage{csquotes}
+\usepackage[backend=biber,style=ieee,sorting=none,maxbibnames=99]{biblatex}
+\addbibresource{bibliography/nexus.bib}
+
+% --- Hyperlinks (load late) ---
+\usepackage[hidelinks,
+            pdftitle={NEXUS: A Reference Architecture for Cross-Functional
+                      Coordination in Manufacturing Operations Management},
+            pdfauthor={Elia Giardini}]{hyperref}
+
+% ============================================================
+%  Helper macros
+% ============================================================
+
+% Architecture-figure placeholder. Figures are generated in a later
+% phase; this box keeps the caption, label, and cross-references valid
+% in both the LaTeX PDF and the pandoc-generated Word output.
+\newcommand{\nexusfigure}[3]{%
+  \begin{figure}[ht]
+    \centering
+    \setlength{\fboxsep}{12pt}%
+    \fbox{\begin{minipage}{0.86\textwidth}
+      \centering
+      \vspace{1.4cm}
+      \textit{[Figure placeholder --- #3]}
+      \vspace{1.4cm}
+    \end{minipage}}
+    \caption{#2}
+    \label{#1}
+  \end{figure}}
+
+% Inline shortcuts for the four BDI agents.
+\newcommand{\PSA}{\textsc{psa}}
+\newcommand{\PMA}{\textsc{pma}}
+\newcommand{\QCA}{\textsc{qca}}
+\newcommand{\SCA}{\textsc{sca}}
+\newcommand{\NEXUS}{\textsc{nexus}}

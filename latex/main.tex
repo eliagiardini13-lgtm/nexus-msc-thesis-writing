@@ -1,0 +1,100 @@
+% ============================================================
+%  NEXUS — Negotiation-driven EXecution and Unified Synchronization
+%  A Reference Architecture for Cross-Functional Coordination in
+%  Manufacturing Operations Management at ISA-95 Level 3
+%
+%  MSc thesis — master document.
+%
+%  Author:  Elia Giardini
+%  Program: M.Sc. Industrial Production Engineering
+%           Politecnico di Torino / Beihang University (double degree)
+%  Supervisors: Prof. Li Yi (Beihang University)
+%               Prof. Alessandro Simeone (Politecnico di Torino)
+%  Defense:  October--November 2026
+%
+%  Build:   pdflatex main  ->  biber main  ->  pdflatex main x2
+%           (or: scripts/build_latex.sh)
+% ============================================================
+
+\documentclass[12pt,a4paper,oneside]{report}
+
+\input{preamble}
+
+\begin{document}
+
+% ------------------------------------------------------------
+%  Title page
+% ------------------------------------------------------------
+\begin{titlepage}
+\centering
+\vspace*{1.2cm}
+{\large\scshape Politecnico di Torino\par}
+{\large\scshape Beihang University\par}
+\vspace{0.4cm}
+{\normalsize Double Degree --- M.Sc.\ Industrial Production Engineering\par}
+\vspace{1.6cm}
+\rule{\textwidth}{0.4pt}\\[0.5cm]
+{\Huge\bfseries NEXUS\par}
+\vspace{0.5cm}
+{\large Negotiation-driven EXecution and Unified Synchronization\par}
+\vspace{0.3cm}
+{\large\itshape A Reference Architecture for Cross-Functional Coordination\\
+in Manufacturing Operations Management at ISA-95 Level 3\par}
+\vspace{0.4cm}
+\rule{\textwidth}{0.4pt}
+\vspace{1.8cm}
+
+\begin{minipage}{0.45\textwidth}
+\begin{flushleft}\large
+\textit{Supervisors:}\\
+Prof.\ Li Yi\\
+Prof.\ Alessandro Simeone
+\end{flushleft}
+\end{minipage}
+\hfill
+\begin{minipage}{0.45\textwidth}
+\begin{flushright}\large
+\textit{Candidate:}\\
+Elia Giardini
+\end{flushright}
+\end{minipage}
+
+\vfill
+{\large Academic Year 2025--2026\par}
+\vspace{0.4cm}
+{\normalsize\itshape Draft --- compiled \today\par}
+\end{titlepage}
+
+% ------------------------------------------------------------
+%  Front matter
+% ------------------------------------------------------------
+\pagenumbering{roman}
+\setcounter{page}{2}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\cleardoublepage
+\pagenumbering{arabic}
+
+% ------------------------------------------------------------
+%  Chapters
+%  Comment out chapters not being worked on to speed compilation;
+%  cross-references to commented chapters will then show as '??'.
+% ------------------------------------------------------------
+\include{chapters/01_introduction}
+\include{chapters/02_literature}
+\include{chapters/03_architecture}
+\include{chapters/04_implementation}
+\include{chapters/05_results}
+\include{chapters/06_industrial}
+\include{chapters/07_conclusions}
+
+% ------------------------------------------------------------
+%  Bibliography
+% ------------------------------------------------------------
+\cleardoublepage
+\printbibliography[heading=bibintoc,title={References}]
+
+\end{document}

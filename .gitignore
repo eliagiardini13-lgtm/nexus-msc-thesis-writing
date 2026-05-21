@@ -1,0 +1,24 @@
+# --- LaTeX build artifacts ---
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.bcf
+*.blg
+*.run.xml
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.xdv
+*.bcf-SAVE-ERROR
+*.bbl-SAVE-ERROR
+
+# --- Generated output (regenerable via scripts/) ---
+latex/main.pdf
+word/*.docx
+
+# --- OS ---
+.DS_Store

@@ -1,0 +1,18 @@
+% Pandoc-friendly redefinitions of the custom macros from preamble.tex.
+% This file is prepended to a chapter fragment before pandoc converts it
+% to Word, so that custom commands expand into structures pandoc can
+% render. It is NOT used by the LaTeX/PDF build (that uses preamble.tex).
+
+\newcommand{\nexusfigure}[3]{%
+  \begin{figure}
+  \centering
+  \textit{[Figure placeholder --- #3]}
+  \caption{#2}
+  \label{#1}
+  \end{figure}}
+
+\newcommand{\PSA}{PSA}
+\newcommand{\PMA}{PMA}
+\newcommand{\QCA}{QCA}
+\newcommand{\SCA}{SCA}
+\newcommand{\NEXUS}{NEXUS}

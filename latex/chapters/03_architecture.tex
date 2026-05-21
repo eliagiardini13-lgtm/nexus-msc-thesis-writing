@@ -1,0 +1,1431 @@
+% ============================================================
+%  Chapter 3 — NEXUS Architecture
+%  STATUS: first draft (2026-05-21).
+%  Source: DESIGN_DECISIONS.md (DD-V5-001 .. DD-V5-022),
+%          docs/NARRATIVE_ARC_v5.md, docs/AGENT_CONSTRAINT_DERIVATION.md,
+%          src/ implementation.
+% ============================================================
+\chapter{The NEXUS Architecture}
+\label{ch:architecture}
+
+% ------------------------------------------------------------
+\section{Introduction}
+\label{sec:arch-intro}
+
+Manufacturing Operations Management (MOM) sits at Level~3 of the ISA-95
+functional hierarchy, between the business-planning systems of Level~4
+and the process-control systems of Levels~2 and below
+\cite{isa95part1,sprock2019isa95}. Level~3 is the layer at which the
+abstract production targets handed down by enterprise planning are
+turned into concrete, time-bounded decisions on the plant floor: which
+operation runs on which machine, when a machine is taken offline for
+maintenance, whether a batch is held for quality inspection, and how far
+ahead spare parts are ordered. ISA-95 decomposes this layer into four
+operations-management functions --- production, maintenance, quality,
+and inventory (here treated as supply) --- and models each as a
+separate activity model with its own information flows and its own
+performance criteria \cite{isa95part1}.
+
+The decomposition is organisationally convenient but it is not
+decisionally clean. The four functions are \emph{coupled}: a decision
+that is locally optimal for one function routinely degrades another. A
+maintenance window reclaims machine health but forgoes production
+hours. A quality hold suppresses defect-driven rework but delays
+throughput. A conservative supply preorder shortens stockout exposure
+but raises carrying cost. A faster production rate lifts short-term
+output but accelerates tool wear and, with it, both the breakdown
+hazard and the defect rate. None of these trade-offs is visible inside
+the activity model of a single function; each becomes visible only when
+the four functions are considered jointly. This is the
+\emph{cross-functional coordination gap} that this thesis addresses.
+
+In most installed plant-floor systems the gap is left open. Each
+function runs its own scheduler or its own rule set, optimising its own
+key performance indicator, and the interactions between functions are
+absorbed informally --- by shift supervisors, by escalation meetings,
+or simply by whichever function happens to act first. The result is a
+\emph{siloed} mode of operation in which the cross-functional
+trade-offs are never explicitly represented, let alone resolved against
+a shared objective. The coordination gap is not a modelling gap: a
+sufficiently detailed centralised model could, in principle, optimise
+the joint problem. It is a coordination gap, because the conditions
+under which such a centralised model could be built --- full visibility
+of every function's cost structure, machine state, defect history and
+supplier reliability --- do not hold in practice. The functions are
+organisationally distinct, their information systems are heterogeneous,
+and the data each would have to surrender to a central optimiser is
+exactly the data each treats as its own (Section~\ref{sec:arch-privacy}
+returns to this point).
+
+This chapter presents \NEXUS{} --- Negotiation-driven EXecution and
+Unified Synchronization --- a reference architecture for closing the
+cross-functional coordination gap at ISA-95 Level~3 without violating
+the informational and organisational boundaries that make centralised
+optimisation infeasible. \NEXUS{} is organised as four layers. A
+\emph{Worker} layer hosts four Belief--Desire--Intention (BDI) agents,
+one per ISA-95 Level~3 function. A \emph{Marketplace} layer hosts a
+multi-issue negotiation mediator that aggregates the agents'
+utility-annotated proposals and resolves each cross-functional conflict
+into a single composite contract. A \emph{Fence} layer audits every
+contract against a suite of pre-declared safety rules and classifies it
+into a three-tier severity scheme. A \emph{School} layer --- described
+here but deferred as future work --- provides the architectural slot
+for continual adaptation of the agents' preferences from operational
+history.
+
+Two design commitments run through the whole architecture and are
+worth stating at the outset.
+
+\begin{description}[leftmargin=1.4em,style=nextline]
+  \item[Composition over invention.] The contribution of \NEXUS{} is
+    the \emph{composition} of established components into a coherent
+    reference architecture for a specific problem --- not the invention
+    of a new negotiation mechanism or a new learning algorithm. The
+    negotiation mechanism in the Marketplace layer is the multi-issue
+    multi-lateral protocol of Ito, Hattori and Klein
+    \cite{ito2007multiissue}; the agent model is the BDI architecture
+    of Rao and Georgeff \cite{rao1995bdi}; the reference-architecture
+    framing follows the lineage of PROSA \cite{vanbrussel1998prosa},
+    ADACOR \cite{leitao2007holonic} and HAPBA \cite{leitao2015hapba}.
+    \NEXUS{} chooses, adapts and integrates; it does not reinvent. This
+    commitment is deliberate and is defended throughout the chapter:
+    a reference architecture earns its keep by being a sound,
+    reproducible composition, not by maximising novelty in any single
+    component.
+  \item[Bounded information disclosure.] No component of \NEXUS{} ever
+    requires a function to publish its internal cost model, its private
+    state, or its objective weights. Agents disclose only
+    \emph{bid summaries} --- a bounded number of regions of the joint
+    decision space, each annotated with a single scalar utility. This
+    is the structural property that distinguishes \NEXUS{} from a
+    centralised optimiser and from distributed constraint optimisation,
+    and it is treated as a first-class architectural requirement rather
+    than an afterthought.
+\end{description}
+
+The remainder of the chapter is organised as follows.
+Section~\ref{sec:arch-overview} presents the four-layer architecture as
+a whole, fixes terminology, and traces the information flow of a single
+coordination event. Section~\ref{sec:arch-worker} describes the Worker
+layer and the four BDI agents, including the mono-dimensional output
+discipline that keeps each agent within its ISA-95 domain.
+Section~\ref{sec:arch-marketplace} describes the Marketplace layer: the
+composite contract space, the bid representation, and the mediator's
+admissible-heuristic search for the welfare-maximising joint contract.
+Section~\ref{sec:arch-fence} describes the Fence layer and its
+three-tier safety classification. Section~\ref{sec:arch-school}
+describes the School layer at the level of detail needed to make it a
+coherent future-work proposal. Section~\ref{sec:arch-isa95} consolidates
+the mapping of the architecture onto the ISA-95 Level~3 functional model
+and states the privacy-preservation property precisely.
+Section~\ref{sec:arch-impl} closes with an overview of the
+implementation architecture and forward references to
+Chapter~\ref{ch:implementation}.
+
+% ------------------------------------------------------------
+\section{Architectural Overview}
+\label{sec:arch-overview}
+
+\subsection{The four layers}
+\label{subsec:four-layers}
+
+\NEXUS{} is a layered architecture. Each layer is a set of components
+with a single, well-defined responsibility, and the layers communicate
+only through narrow, explicitly typed interfaces. The layering is not
+merely a presentational device: it is the mechanism by which the two
+design commitments of Section~\ref{sec:arch-intro} are enforced. Because
+the Worker layer can reach the Marketplace layer only by publishing bid
+summaries, no agent can leak its cost model downstream even if it
+wished to; because the Fence layer consumes only the Marketplace's
+audit log, safety governance cannot couple itself into the negotiation
+protocol. The interface discipline turns the design commitments into
+structural invariants.
+
+Figure~\ref{fig:arch-layers} shows the four layers and the principal
+information flows between them. Table~\ref{tab:layers} summarises the
+responsibility, the principal components, and the inbound and outbound
+interface of each layer.
+
+\nexusfigure{fig:arch-layers}{The four-layer \NEXUS{} reference
+architecture. Solid arrows carry information exchanged during a
+coordination event; the dashed boundary of the School layer marks it as
+an architectural slot deferred to future work.}{a stacked
+four-layer block diagram. Top to bottom: Worker layer (four BDI agent
+boxes PSA, PMA, QCA, SCA); Marketplace layer (Bid Bus, Mediator,
+Contract Record); Fence layer (three-tier classifier); School layer
+(drawn with a dashed border). Upward arrows from Workers to Marketplace
+labelled ``bid summaries''; a downward arrow from Marketplace to Workers
+labelled ``composite contract''; an arrow from the Contract Record into
+the Fence classifier labelled ``audit log''; dashed arrows from School
+back to the Workers labelled ``adapted weights (future work)''.}
+
+\begin{table}[ht]
+\centering
+\caption{The four layers of the \NEXUS{} architecture.}
+\label{tab:layers}
+\small
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+\textbf{Layer} & \textbf{Responsibility} & \textbf{Principal components} \\
+\midrule
+Worker &
+  Represent each ISA-95 Level~3 function as an autonomous BDI agent;
+  translate local beliefs and domain objectives into utility-annotated
+  proposals over the joint decision space. &
+  Four BDI agents: \PSA{} (production), \PMA{} (maintenance),
+  \QCA{} (quality), \SCA{} (supply). \\
+\addlinespace
+Marketplace &
+  Aggregate the agents' proposals for each cross-functional conflict and
+  resolve them into one composite contract that maximises joint
+  welfare. &
+  Bid Bus, Mediator (admissible-heuristic search), Contract Record. \\
+\addlinespace
+Fence &
+  Audit every resolved contract against pre-declared safety rules and
+  classify it into a three-tier severity scheme; emit an audit stream.
+  Log-only within the scope of this thesis. &
+  Rule suite, three-tier classifier, audit record stream. \\
+\addlinespace
+School &
+  Provide the architectural slot for continual adaptation of agent
+  preference weights from operational history. Deferred as future work
+  (Section~\ref{sec:arch-school}). &
+  Weight-adaptation module (specified, not implemented). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The layering admits a compact reading. The Worker layer is where
+\emph{domain knowledge} lives: each agent knows its own function and
+nothing else. The Marketplace layer is where \emph{coordination}
+happens: it is informationally limited --- it sees only what the agents
+publish --- but computationally active, since resolving a conflict
+requires a non-trivial search. The Fence layer is where
+\emph{governance} happens: it neither participates in coordination nor
+holds domain knowledge; it observes the Marketplace's output and judges
+it. The School layer is where \emph{adaptation} would happen: it closes
+a slow outer loop from operational outcomes back to agent preferences.
+Domain knowledge, coordination, governance and adaptation are thus four
+separable concerns, and the architecture devotes exactly one layer to
+each.
+
+\subsection{Coordination events and the information flow}
+\label{subsec:info-flow}
+
+\NEXUS{} is event-driven. The plant floor is modelled as a discrete-event
+simulation in which the four functions advance their own state until a
+\emph{cross-functional conflict} arises --- a situation in which two or
+more functions have a stake in the same upcoming decision. Three
+conflict types are distinguished, named for the function that first
+detects them: a \textsc{maintenance} conflict (a machine's modelled
+health has fallen below the preventive-maintenance threshold), a
+\textsc{quality} conflict (an observed defect rate has crossed a control
+limit), and a \textsc{supply} conflict (a spare-part lead time has
+exceeded the shortage horizon). Every conflict, whatever its type,
+triggers the same coordination event, and every coordination event
+produces exactly one composite contract.
+
+A coordination event proceeds in five phases, illustrated in
+Figure~\ref{fig:arch-flow}.
+
+\begin{enumerate}[leftmargin=1.8em,itemsep=0.25em]
+  \item \textbf{Announcement.} The conflict is published on the Bid Bus
+    as a \emph{conflict announcement} carrying the conflict type, the
+    machine identifier, a timestamp, and the small set of observable
+    signals the agents are permitted to read (machine health, defect
+    rate, spare lead time). The announcement carries no agent's private
+    state.
+  \item \textbf{Bidding.} Each of the four agents independently reads
+    the announcement, updates its beliefs, derives its private
+    constraint set, and emits a set of \emph{bids} ---
+    utility-annotated regions of the joint contract space
+    (Section~\ref{sec:arch-marketplace}).
+  \item \textbf{Mediation.} The Mediator collects the four bid sets and
+    searches for the combination of bids --- one per agent --- whose
+    regions have a non-empty joint intersection and whose utilities sum
+    to the maximum achievable value.
+  \item \textbf{Contract selection.} Within the joint intersection of
+    the winning bid combination the Mediator selects a single composite
+    contract and publishes it back to all four agents, which then act
+    on it.
+  \item \textbf{Audit.} The Contract Record appends the resolved
+    contract --- together with the bids that produced it --- to an
+    append-only log. The Fence layer reads this log and classifies the
+    contract into one of three safety tiers.
+\end{enumerate}
+
+\nexusfigure{fig:arch-flow}{Information flow of a single coordination
+event. The five phases run left to right; the Fence audit in phase~5 is
+post-hoc and does not feed back into the negotiation.}{a
+sequence diagram with four agent lifelines (PSA, PMA, QCA, SCA), a Bid
+Bus lifeline, a Mediator lifeline, a Contract Record lifeline and a
+Fence lifeline. Messages, top to bottom: conflict announcement broadcast
+from Bid Bus to all four agents; four bid-set messages from the agents
+to the Mediator; an internal ``branch-cut A* search'' self-message on
+the Mediator; a composite-contract message from the Mediator broadcast
+to the four agents; an append message from the Mediator to the Contract
+Record; an audit-log read from the Contract Record to the Fence; a
+self-message ``three-tier classification'' on the Fence.}
+
+Two properties of this flow are load-bearing for the rest of the
+chapter. First, the negotiation is \emph{single-round}: agents bid
+once, the Mediator resolves once, and the event closes. The protocol of
+Ito, Hattori and Klein admits a multi-round iterative-narrowing
+extension \cite{hattori2007narrowing}, in which the Mediator returns
+partial-agreement feedback and agents resubmit refined bids; \NEXUS{}
+deliberately implements only the single-round form and treats iterative
+narrowing as future work (the justification is given in
+Section~\ref{subsec:protocol-scope}). Second, the Fence audit in
+phase~5 is strictly \emph{post-hoc}: it observes the contract after it
+has been published and acted upon, and within the scope of this thesis
+it does not block, alter, or roll back the contract. The consequences of
+this log-only stance, and the path to active enforcement, are the
+subject of Section~\ref{sec:arch-fence}.
+
+\subsection{Why a layered, distributed architecture}
+\label{subsec:why-layered}
+
+Before describing the layers in detail it is worth making explicit why
+the architecture is layered and distributed at all, rather than
+centralised. Three arguments support the choice.
+
+The first is \emph{organisational fidelity}. ISA-95 Level~3 is already
+decomposed into four functions, each with its own information system,
+its own staff and its own performance criteria \cite{sprock2019isa95}.
+An architecture whose components map one-to-one onto those functions
+can be deployed incrementally, function by function, and can be reasoned
+about by the people who own each function. A monolithic optimiser has
+no such correspondence; it must be adopted all at once and is owned by
+no one.
+
+The second is \emph{informational feasibility}. A centralised optimiser
+needs the joint problem in full: every function's cost structure, every
+machine's degradation model, every supplier's reliability distribution.
+In a real plant these are held in separate, heterogeneous systems and
+are, for organisational reasons, not freely shared. \NEXUS{} requires
+only that each function be able to express its preferences as bids over
+a shared, low-dimensional decision space --- a far weaker requirement
+than full disclosure (Section~\ref{sec:arch-privacy}).
+
+The third is \emph{separation of concerns}. Coordinating four functions,
+governing the safety of the coordinated decision, and adapting the
+functions' preferences over time are three different problems with three
+different rates of change and three different owners. Folding them into
+one component couples them; giving each its own layer keeps them
+independently replaceable. The Fence layer, in particular, can be
+strengthened from log-only auditing to active enforcement
+(Section~\ref{sec:arch-fence}) without touching the Marketplace, exactly
+because it is a separate layer that consumes only an audit log.
+
+These arguments place \NEXUS{} in the established tradition of
+reference architectures for manufacturing control. PROSA
+\cite{vanbrussel1998prosa} introduced the idea of decomposing plant
+control into cooperating holons with distinct responsibilities; ADACOR
+\cite{leitao2007holonic} added an adaptive coordination mechanism that
+shifts between a more centralised and a more distributed regime; HAPBA
+\cite{leitao2015hapba} and the broader holonic and multi-agent
+manufacturing literature \cite{leitao2009survey,trentesaux2009,monostori2006}
+continued the line. \NEXUS{} inherits the layered, distributed stance of
+this tradition and contributes a specific, well-characterised choice for
+the coordination layer: multi-issue mediated negotiation in place of the
+contract-net or hierarchical-dispatch mechanisms used by its
+predecessors.
+
+% ------------------------------------------------------------
+\section{The Worker Layer}
+\label{sec:arch-worker}
+
+\subsection{Four agents, four functions}
+\label{subsec:four-agents}
+
+The Worker layer contains exactly four agents, one for each ISA-95
+Level~3 operations-management function:
+
+\begin{description}[leftmargin=1.4em,style=nextline,itemsep=0.3em]
+  \item[\PSA{} --- Production Scheduling Agent.] Owns the production
+    function. Its concern is throughput and the timely completion of
+    operations; its home decision is the production \emph{rate} at which
+    a machine is driven.
+  \item[\PMA{} --- Preventive Maintenance Agent.] Owns the maintenance
+    function. Its concern is machine health and the avoidance of
+    unplanned breakdowns; its home decision is the maintenance
+    \emph{window} --- whether and how urgently a machine is serviced.
+  \item[\QCA{} --- Quality Control Agent.] Owns the quality function.
+    Its concern is the defect rate and the cost of defect-driven
+    rework; its home decision is the quality \emph{action} --- the
+    intensity of any inspection hold placed on output.
+  \item[\SCA{} --- Supply Chain Agent.] Owns the inventory and supply
+    function. Its concern is spare-part availability and stockout
+    exposure; its home decision is the supply \emph{horizon} --- how far
+    ahead spare parts are preordered.
+\end{description}
+
+The cardinality is fixed by the ISA-95 decomposition itself, not chosen
+for convenience: Level~3 defines four operations-management functions,
+so \NEXUS{} has four Worker agents. Table~\ref{tab:agents} records the
+mapping and previews the home issue each agent decides --- the issues
+themselves are defined in Section~\ref{sec:arch-marketplace}.
+
+\begin{table}[ht]
+\centering
+\caption{The four Worker agents, their ISA-95 Level~3 functions, their
+local beliefs, and the home issue each one owns in the composite
+contract.}
+\label{tab:agents}
+\small
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
+\toprule
+\textbf{Agent} & \textbf{ISA-95 L3 function} & \textbf{Principal local beliefs}
+  & \textbf{Home issue} \\
+\midrule
+\PSA{} & Production operations & Operation backlog, machine load, tardiness
+  pressure & \texttt{production\_rate} \\
+\PMA{} & Maintenance operations & Machine health, time since last service,
+  breakdown hazard & \texttt{maint\_window} \\
+\QCA{} & Quality operations & Observed defect rate, severity, rework backlog
+  & \texttt{quality\_action} \\
+\SCA{} & Inventory / supply operations & Spare-part stock, supplier lead time
+  & \texttt{supply\_horizon} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{The BDI agent model}
+\label{subsec:bdi}
+
+Each Worker agent is structured according to the
+Belief--Desire--Intention model of agency \cite{rao1995bdi,wooldridge1995}.
+The BDI model is a natural fit for an ISA-95 Level~3 function because
+the three mental attitudes map cleanly onto the three things a function
+must do: maintain a picture of its part of the plant, hold objectives,
+and commit to actions.
+
+\begin{description}[leftmargin=1.4em,style=nextline,itemsep=0.3em]
+  \item[Beliefs.] The agent's local model of its slice of the plant.
+    \PSA{} believes things about operation backlogs and machine load;
+    \PMA{} about machine health and time since service; \QCA{} about
+    defect rates and severity; \SCA{} about stock levels and supplier
+    lead times. Beliefs are updated from the observations the agent is
+    entitled to read and from the conflict announcement. Crucially,
+    \emph{an agent's beliefs are private}: no agent observes another
+    agent's beliefs, and the Marketplace never reads them
+    (Section~\ref{sec:arch-privacy}).
+  \item[Desires.] The agent's objectives, expressed as a small set of
+    weighted goals within its own function --- for \PSA{}, for example,
+    minimising tardiness, maximising throughput, and minimising
+    disruption. The desire weights are parameters of the agent. Within
+    the scope of this thesis they are fixed at calibrated values; the
+    School layer (Section~\ref{sec:arch-school}) is the architectural
+    slot in which they would later be adapted.
+  \item[Intentions.] The agent's committed proposals for the current
+    coordination event. In \NEXUS{} an agent's intentions materialise
+    as a set of \emph{bids} --- the utility-annotated regions of the
+    joint contract space defined in Section~\ref{sec:arch-marketplace}.
+    The bid set is the only thing an agent makes public; it is the
+    externally visible projection of the agent's beliefs and desires.
+\end{description}
+
+Figure~\ref{fig:arch-bdi} shows the internal structure of a Worker
+agent and the deliberation pipeline that turns a conflict announcement
+into a bid set. The pipeline has two stages the agent specialises and
+one stage shared by all four agents. The specialised stages are belief
+update --- how the agent revises its local model from a new observation
+--- and constraint derivation --- how the agent's current beliefs and
+desires generate a private set of weighted constraints over the joint
+contract space. The shared stage is bid generation, which runs the same
+four-step procedure for every agent (Section~\ref{subsec:bid-gen}).
+
+\nexusfigure{fig:arch-bdi}{Internal structure of a Worker agent. The
+belief-update and constraint-derivation stages are specialised per
+agent; the bid-generation stage is shared. Only the bid set crosses the
+agent boundary.}{a single agent box, internally divided into
+``Beliefs'' (a small database icon), ``Desires'' (a weighted goal list),
+and a deliberation pipeline with three stages drawn left to right:
+``update beliefs'' (fed by an incoming observation arrow),
+``derive constraints'' (producing a stack of weighted constraint icons),
+and ``generate bids'' (producing bid icons). An incoming arrow on the
+left is labelled ``conflict announcement''; the only outgoing arrow, on
+the right, is labelled ``bid set'' and crosses the dashed agent
+boundary. Beliefs and Desires are shown entirely inside the boundary,
+with a small lock icon indicating they never cross it.}
+
+\subsection{Mono-dimensional outputs and domain authority}
+\label{subsec:mono-dim}
+
+A central discipline of the Worker layer is that each agent's authority
+is \emph{mono-dimensional}: an agent is the owner of exactly one issue
+of the composite contract --- its home issue --- and although it is
+permitted to express preferences over the other three issues, those
+cross-domain preferences are constructed to be, by design, an order of
+magnitude weaker than its preferences on its home issue.
+
+This discipline answers a question that the multi-issue setting raises
+immediately. If every agent may bid on every issue, what stops \QCA{}
+from effectively dictating the maintenance decision, or \PSA{} from
+overriding a quality hold? In a single-winner mechanism the answer
+would have to be a separate priority rule layered on top of the
+mechanism. In \NEXUS{} the answer is structural and lives inside the
+bid weights: each agent's constraints on its \emph{home} issue carry
+weights bounded by an agent-specific ceiling, while its constraints on
+\emph{other} issues carry weights produced by multiplying a base weight
+by a small cross-domain damping factor. The home-issue ceilings ---
+recorded in Table~\ref{tab:ceilings} --- are roughly an order of
+magnitude above the typical damped cross-domain weight. The encoding
+realises ISA-95 functional authority operationally: a function's
+preference on its own decision dominates the cross-domain stakes of its
+peers, so the maintenance decision is, in the normal case, \PMA{}'s to
+make --- but the peers still have a voice, and that voice shapes the
+outcome whenever \PMA{} itself is indifferent between maintenance
+options.
+
+\begin{table}[ht]
+\centering
+\caption{Approximate per-agent home-issue weight ceilings (domain
+authority). Cross-domain constraint weights are damped to roughly a
+tenth of these values, so an agent's preference on its home issue
+dominates its peers' cross-domain stakes by about an order of
+magnitude.}
+\label{tab:ceilings}
+\small
+\begin{tabular}{@{}l l r@{}}
+\toprule
+\textbf{Agent} & \textbf{Home issue} & \textbf{Home-issue weight ceiling} \\
+\midrule
+\PMA{} & \texttt{maint\_window}     & $\approx 500$ \\
+\PSA{} & \texttt{production\_rate}  & $\approx 200$ \\
+\SCA{} & \texttt{supply\_horizon}   & $\approx 200$ \\
+\QCA{} & \texttt{quality\_action}   & $\approx 175$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+It is worth being precise about what ``mono-dimensional'' does and does
+not mean. It does \emph{not} mean an agent estimates only its own
+issue: each agent emits constraints over the whole joint space, and the
+cross-domain constraints are what make the negotiation genuinely
+multi-issue rather than four parallel single-issue negotiations. It
+\emph{does} mean three things. First, no agent observes another agent's
+domain state --- \PSA{} never sees \PMA{}'s health model, only the
+shared signals carried in the announcement; there is no inter-domain
+estimation and no cross-visibility of beliefs. Second, an agent's
+cross-domain preferences are subordinate by construction, through the
+damping factor, so they act as tie-breakers and nudges rather than
+overrides. Third, ownership is exclusive: each issue has exactly one
+owning agent, and the architecture never asks two agents to arbitrate
+which of them owns a decision. The first point is an informational
+property and underpins the privacy claim of
+Section~\ref{sec:arch-privacy}; the second and third are authority
+properties and underpin the claim that \NEXUS{} respects the ISA-95
+functional decomposition rather than dissolving it.
+
+The empirical behaviour of the weight ceilings is discussed in
+Chapter~\ref{ch:results}; here it is enough to note that on the
+benchmark families studied the order-of-magnitude separation makes the
+exact cross-domain damping factor a low-sensitivity parameter --- the
+qualitative outcome is stable across a range of damping values --- which
+is the expected signature of a design in which cross-domain preferences
+are deliberately subdominant.
+
+% ------------------------------------------------------------
+\section{The Marketplace Layer}
+\label{sec:arch-marketplace}
+
+The Marketplace layer is where coordination happens. It receives the
+four agents' bid sets for a conflict and returns one composite contract.
+This section defines the composite contract space
+(Section~\ref{subsec:contract-space}), the bid representation and the
+agent-side procedure that produces it (Sections~\ref{subsec:bids}
+and~\ref{subsec:bid-gen}), the mediator's search for the
+welfare-maximising joint contract (Section~\ref{subsec:mediator}), and
+the scope decisions that bound the protocol (Section~\ref{subsec:protocol-scope}).
+
+\subsection{The composite contract space}
+\label{subsec:contract-space}
+
+The defining decision of the Marketplace layer --- and the decision
+that most sharply distinguishes \NEXUS{} from a single-winner
+coordination mechanism --- is that a coordination event is resolved not
+by selecting one agent's preferred action but by producing a
+\emph{composite contract}: a vector that assigns a value to every one of
+the four functional decisions simultaneously.
+
+Formally, the composite contract space is the Cartesian product of four
+\emph{issue} domains, one per agent home issue:
+%
+\begin{equation}
+  \label{eq:contract-space}
+  \Omega \;=\; \Omega_{\mathrm{PR}} \times \Omega_{\mathrm{MW}}
+            \times \Omega_{\mathrm{QA}} \times \Omega_{\mathrm{SH}},
+\end{equation}
+%
+where $\Omega_{\mathrm{PR}}$ is the domain of the production rate,
+$\Omega_{\mathrm{MW}}$ of the maintenance window, $\Omega_{\mathrm{QA}}$
+of the quality action, and $\Omega_{\mathrm{SH}}$ of the supply horizon.
+A \emph{contract} is a single point $c \in \Omega$. The four issue
+domains, with their discrete levels, are given in
+Table~\ref{tab:issues}.
+
+\begin{table}[ht]
+\centering
+\caption{The four issues of the composite contract and their discrete
+domains. The joint space has $|\Omega| = 3 \times 3 \times 3 \times 4 =
+108$ contracts.}
+\label{tab:issues}
+\small
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Issue} & \textbf{Owner} & \textbf{Levels} & \textbf{Interpretation} \\
+\midrule
+\texttt{production\_rate} & \PSA{} & \textsc{slow}, \textsc{normal}, \textsc{fast}
+  & Speed at which the machine is driven; faster lifts output but
+    accelerates wear. \\
+\addlinespace
+\texttt{maint\_window} & \PMA{} & \textsc{none}, \textsc{planned}, \textsc{immediate}
+  & Whether and how urgently the machine is serviced. \\
+\addlinespace
+\texttt{quality\_action} & \QCA{} & \textsc{no\_hold}, \textsc{hold\_light}, \textsc{hold\_full}
+  & Intensity of the inspection hold placed on output. \\
+\addlinespace
+\texttt{supply\_horizon} & \SCA{} & \textsc{h0}, \textsc{h24}, \textsc{h48}, \textsc{h72}
+  & Length, in hours, of the spare-part preorder window. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The joint space is small --- $108$ contracts --- and finite. This is a
+deliberate scope decision. The issue domains are kept discrete and
+coarse so that the joint space can be enumerated exactly and the
+mediator's search can carry a global-optimality guarantee
+(Section~\ref{subsec:mediator}); the alternative of continuous or
+finely discretised issues would force the mediator onto approximate
+search and would forfeit that guarantee for no benefit at the scale of
+an ISA-95 Level~3 coordination loop.
+
+The composite structure is what makes the cross-functional trade-offs
+representable. A single-winner mechanism resolves a conflict by choosing
+a label --- ``maintenance wins'' --- and so can never express the
+statement ``service the machine \emph{and} hold quality light
+\emph{and} keep the rate normal''; the composite contract expresses
+exactly such joint statements, because it is a point in
+$\Omega$ rather than a choice among the agents. It is structurally
+impossible for the mechanism to collapse into fixed-priority routing,
+because its output is a vector by construction. This point is developed
+further when the contrast with single-winner mechanisms is drawn in
+Section~\ref{subsec:protocol-scope}.
+
+\subsection{Bids: utility-annotated regions}
+\label{subsec:bids}
+
+Agents do not reveal their utility functions to the Marketplace. They
+reveal \emph{bids}. Following the multi-issue protocol of Ito, Hattori
+and Klein \cite{ito2007multiissue}, a bid is a compact, public summary
+of one region of the contract space that the agent finds acceptable,
+annotated with the utility the agent assigns to it.
+
+An agent $i$ holds, for the current conflict, a private set of weighted
+\emph{constraints}. A constraint $k$ is a predicate over the contract
+space --- it is satisfied by a subset $R_{ik} \subseteq \Omega$ of
+contracts --- carrying a non-negative weight $w_{ik}$. The agent's
+utility for a contract $c$ is the additive sum of the weights of the
+constraints that $c$ satisfies,
+%
+\begin{equation}
+  \label{eq:utility}
+  U_i(c) \;=\; \sum_{k \,:\, c \,\in\, R_{ik}} w_{ik},
+\end{equation}
+%
+which is the additive utility form of Ito, Hattori and Klein
+\cite{ito2007multiissue} and is the natural multi-issue generalisation
+of the weighted-goal scoring used in single-issue agent bidding.
+A \emph{bid} $b_{ij}$ submitted by agent $i$ is then the pair
+%
+\begin{equation}
+  \label{eq:bid}
+  b_{ij} \;=\; \bigl(\, u_{ij},\; R_{ij} \,\bigr),
+\end{equation}
+%
+where $R_{ij} \subseteq \Omega$ is a region of the contract space ---
+in practice a hyper-rectangle, the intersection of the regions of the
+agent's most heavily weighted satisfied constraints --- and $u_{ij}$ is
+the scalar utility the agent attaches to that region. The agent submits
+a small set of such bids per conflict.
+
+The width of the bid region is governed by a relaxation parameter,
+written \textsc{top}-\textit{n}: the region $R_{ij}$ is formed as the
+intersection of the $n$ most heavily weighted constraints the agent
+satisfies, while the annotated utility $u_{ij}$ aggregates the weights
+of \emph{all} satisfied constraints. The parameter trades expressiveness
+against feasibility. With $n=1$ the region is just the single heaviest
+constraint's region --- wide, easy to intersect with other agents'
+regions, but blind to the agent's inter-issue trade-offs. With larger
+$n$ the region is the intersection of more constraints --- narrower,
+more faithful to the agent's joint preference, but more likely to leave
+no contract in common with the other agents, which would cause the
+negotiation to fail. \NEXUS{} uses $n=2$: the bid region is the
+intersection of an agent's two heaviest constraints, which captures the
+single most important inter-issue trade-off each agent holds while
+keeping the empirical negotiation-failure rate low. The calibration
+behind this choice, and the failure-rate-versus-expressiveness curve it
+sits on, are reported in Chapter~\ref{ch:results}.
+
+What an agent publishes is therefore exactly its bid set --- a bounded
+number of (utility, region) pairs --- and nothing else. It does not
+publish the constraints themselves, their weights, the beliefs that
+generated them, or the desire weights that scaled them. This is the
+precise sense in which \NEXUS{} preserves informational locality, and
+Section~\ref{sec:arch-privacy} states the property formally.
+
+\subsection{Bid generation}
+\label{subsec:bid-gen}
+
+Each agent turns its private constraint set into a bid set by a
+four-step procedure, shared by all four agents and adapted from the
+sampling-and-adjustment scheme of the multi-issue protocol
+\cite{ito2007multiissue,klein2003negotiating}:
+
+\begin{enumerate}[leftmargin=1.8em,itemsep=0.2em]
+  \item \textbf{Sample.} Draw a set of candidate contracts from the
+    joint space $\Omega$.
+  \item \textbf{Adjust.} From each sampled contract, perform a local
+    search --- in \NEXUS{} a greedy hill-climb --- towards a nearby
+    contract of higher private utility $U_i$.
+  \item \textbf{Bid.} For each adjusted contract whose utility exceeds
+    a reservation threshold, build a bid: the region is the
+    \textsc{top}-\textit{n} constraint intersection around the contract, the
+    utility is the value of Equation~\eqref{eq:utility}.
+  \item \textbf{Submit.} Emit the resulting set of bids to the Bid Bus.
+\end{enumerate}
+
+The local-search step admits two implementations. The original protocol
+uses simulated annealing, accepting an uphill or a controlled downhill
+move with the Metropolis probability
+$\exp\bigl((U_i(c') - U_i(c))/T\bigr)$ at temperature $T$
+\cite{klein2003negotiating}. \NEXUS{} retains simulated annealing as a
+selectable option but defaults to plain greedy hill-climbing. The reason
+is empirical and is documented in
+Chapter~\ref{ch:implementation}: at the scale of the \NEXUS{} contract
+space the annealing temperature has no measurable effect on the
+resulting bids, so the simpler, faster, fully deterministic greedy
+search is preferred. Determinism is itself valuable here --- it is part
+of what makes a coordination event byte-for-byte reproducible, which the
+reproducibility infrastructure of Chapter~\ref{ch:implementation} relies
+on.
+
+Listing~\ref{lst:bid} sketches the data structures involved, in the
+notation of the implementation.
+
+\begin{lstlisting}[language=Python,caption={The constraint and bid data
+structures (schematic). An agent holds a list of \texttt{Constraint}s
+and emits a list of \texttt{Bid}s; only the latter is public.},label={lst:bid}]
+class Constraint:        # private to the owning agent
+    region: FrozenSet[Contract]   # contracts that satisfy the predicate
+    weight: float                 # non-negative; scaled by desire weight
+
+class Bid:               # public; the only thing that leaves an agent
+    utility: float                # sum of ALL satisfied constraint weights
+    region:  FrozenSet[Contract]  # intersection of the top-n constraints
+    sample:  Contract             # a representative contract in the region
+\end{lstlisting}
+
+\subsection{The mediator}
+\label{subsec:mediator}
+
+The Mediator is the active component of the Marketplace layer. It
+receives one bid set per agent and must return one composite contract.
+Per the placement decision discussed in
+Section~\ref{subsec:mediator-placement}, it is a component
+\emph{within} the Marketplace layer, not an agent and not a supervisor
+above the agents.
+
+\paragraph{The optimisation problem.}
+Let agent $i$ submit bid set $B_i$. A \emph{combination} is a selection
+of one bid per agent, $\beta = (b_1, \dots, b_4)$ with $b_i \in B_i$.
+The combination is \emph{feasible} if the four bid regions have a
+non-empty joint intersection,
+%
+\begin{equation}
+  \label{eq:feasible}
+  R(\beta) \;=\; \bigcap_{i=1}^{4} R_{i}(b_i) \;\neq\; \emptyset,
+\end{equation}
+%
+which is the condition that there exists at least one contract
+acceptable to all four agents under the chosen bids. The Mediator
+searches for the feasible combination of maximum summed utility,
+%
+\begin{equation}
+  \label{eq:welfare}
+  \beta^{\star} \;=\; \arg\max_{\beta \,:\, R(\beta) \neq \emptyset}
+                      \;\sum_{i=1}^{4} u_i(b_i),
+\end{equation}
+%
+and then commits to a single contract $c^{\star} \in R(\beta^{\star})$.
+Objective~\eqref{eq:welfare} is a social-welfare maximisation: it picks
+the joint agreement that maximises the sum of the agents' utilities.
+Under the cooperative, additive-utility setting of
+Equation~\eqref{eq:utility}, the maximiser of the sum cannot be
+Pareto-dominated --- any contract that improved one agent without
+harming another would have a strictly greater sum and so would already
+have been chosen. The composite contract \NEXUS{} produces is therefore
+\emph{Pareto-optimal with respect to the published bids} by
+construction. This property is load-bearing for the comparison against
+a centralised Pareto optimiser in Chapter~\ref{ch:results}.
+
+\paragraph{Why search rather than enumerate.}
+The space of combinations is bounded --- with four agents and at most
+$K$ bids each there are at most $K^4$ of them --- and at the
+calibrated bid counts of \NEXUS{} a brute-force enumeration would in
+fact be tractable. The Mediator nonetheless uses a search, for two
+reasons. The first is efficiency: most combinations are infeasible, and
+their infeasibility can be detected on a \emph{partial} selection ---
+once two bid regions fail to intersect, no extension of that partial
+selection can intersect either. A search that builds combinations one
+agent at a time can therefore prune (``branch-cut'') an infeasible
+partial selection before ever extending it, and so does work
+proportional to the feasible part of the search tree rather than to
+$K^4$. The second reason is that, with the right priority ordering, the
+same search yields a provable global-optimality guarantee at its first
+complete result --- which a fixed enumeration order does not.
+
+\paragraph{Branch-cut search with an admissible heuristic.}
+The Mediator performs a best-first search over partial combinations,
+expanding one agent at a time. Each partial combination $p$ at depth
+$d$ (i.e.\ with $d$ of the four agents' bids chosen) is placed on a
+priority queue keyed by
+%
+\begin{equation}
+  \label{eq:astar}
+  f(p) \;=\; \underbrace{\sum_{i \le d} u_i(b_i)}_{g(p)\ :\ \text{utility committed}}
+           \;+\; \underbrace{\sum_{j > d} \max_{b \in B_j} u(b)}_{h(p)\ :\ \text{optimistic remainder}} ,
+\end{equation}
+%
+and partial combinations whose joint region has become empty are
+discarded (branch-cut) rather than queued. The term $g(p)$ is the
+utility already committed by the chosen bids; the term $h(p)$ is, for
+each not-yet-chosen agent, the largest utility any of its bids could
+contribute. Because branch-cutting can only ever \emph{remove}
+feasible completions, $h(p)$ never underestimates the true utility
+reachable from $p$: it is an \emph{admissible} heuristic in the sense of
+the A* algorithm of Hart, Nilsson and Raphael. Expanding the queue in
+decreasing order of $f$ is therefore A* search on a maximisation
+problem, and the standard A* optimality argument applies: \emph{the
+first complete combination the search returns is a global maximiser of
+Equation~\eqref{eq:welfare}}.
+
+The guarantee is not a cosmetic refinement. An earlier version of the
+Mediator keyed the queue on the committed utility $g(p)$ alone, omitting
+the optimistic remainder $h(p)$. That weaker key makes the search
+best-first on partial sums but \emph{not} globally optimal: it can
+commit to a high-utility first bid all of whose feasible completions are
+poor, and never explore a lower-utility first bid with an excellent
+forced completion. On adversarially constructed inputs the resulting
+contract was found to be up to $85\%$ short of the optimum. Adding the
+admissible term $h(p)$ closes that gap and aligns the implementation
+with the social-welfare claim the architecture makes. The episode is
+recorded here because it illustrates a general point about reference
+architectures: a claimed property --- here, ``the mediator maximises
+joint welfare'' --- is only as good as the algorithm that is supposed
+to deliver it, and the two must be verified to agree.
+
+Figure~\ref{fig:arch-mediator} illustrates the search on a small
+example. Algorithm~\ref{lst:mediator} gives the procedure in pseudocode.
+
+\nexusfigure{fig:arch-mediator}{Branch-cut A* search over partial bid
+combinations. Each level of the tree fixes one more agent's bid; a
+crossed node is a branch-cut (empty joint region); the highlighted path
+is the first complete combination popped, which is the global welfare
+maximiser.}{a four-level search tree. The root is labelled
+``no bids chosen''. Level~1 nodes fix a \PMA{} bid, level~2 a \QCA{}
+bid, level~3 a \PSA{} bid, level~4 an \SCA{} bid. Several interior nodes
+are marked with a cross and the label ``branch-cut: empty joint
+region''. Each node carries a small label ``$f = g + h$''. One
+root-to-leaf path is drawn in bold and labelled ``first complete pop ---
+global welfare maximiser''. A side caption notes that bold-path leaf
+utility equals $\max \sum u_i$.}
+
+\begin{lstlisting}[caption={The mediator's branch-cut A* search
+(pseudocode). The priority key f = g + h is Equation~(3.6).},label={lst:mediator}]
+function SELECT_CONTRACT(bid sets B_1 .. B_4):
+    queue <- empty priority queue, ordered by f, largest first
+    push the empty partial combination, with f = sum_j ( max utility in B_j )
+    while queue is not empty:
+        p <- pop the partial combination of largest f
+        if p is complete (one bid chosen for all 4 agents):
+            return a contract c* from the joint region R(p)   # global optimum
+        d <- number of bids already chosen in p
+        for each bid b in B_(d+1):
+            p' <- p extended with bid b
+            if the joint region R(p') is empty:
+                discard p'                                    # branch-cut
+            else:
+                push p' with key f(p') = g(p') + h(p')        # see Eq. 3.6
+    return FAILURE   # no feasible combination exists
+\end{lstlisting}
+
+\paragraph{Contract selection within the joint region.}
+The search returns a winning combination $\beta^{\star}$; its joint
+region $R(\beta^{\star})$ typically still contains more than one
+contract. The Mediator selects the final $c^{\star}$ from that region by
+a deterministic tie-break --- maximising the summed agent utility over
+the contracts in the region, and, where that is itself tied, taking the
+lowest-indexed contract under a fixed enumeration order. Determinism in
+the tie-break is what makes the whole coordination event reproducible:
+the same bid sets always yield the same contract.
+
+\paragraph{Negotiation failure.}
+If every combination is infeasible --- the search empties its queue
+without ever popping a complete combination --- the event is a
+\emph{negotiation failure}: no contract is acceptable to all four
+agents under their submitted bids. The environment then falls back to a
+conservative default, and, as Section~\ref{sec:arch-fence} describes,
+the Fence layer records the failure as a top-tier audit signal. The
+failure rate is a calibration concern --- it is the quantity the
+\textsc{top}-\textit{n} parameter trades against expressiveness --- and is
+reported in Chapter~\ref{ch:results}.
+
+\subsection{Mediator placement and protocol scope}
+\label{subsec:protocol-scope}
+
+\paragraph{The mediator is inside the Marketplace, not above the agents.}
+\label{subsec:mediator-placement}
+It would be possible to model the Mediator as a fifth agent --- a
+``hyper-agent'' sitting above \PSA{}, \PMA{}, \QCA{} and \SCA{} and
+arbitrating between them. \NEXUS{} deliberately does not. The Mediator
+is a logical component \emph{within} the Marketplace layer for a precise
+reason: it has no beliefs, no desires and no model of the plant. It
+does not know what a machine is. Its entire information set is the union
+of the bids published for the current conflict, and its entire function
+is the combinatorial search of Equation~\eqref{eq:welfare} over that
+information set. A fifth BDI agent, by contrast, would have its own
+utility function and its own view of the plant state, and would
+re-introduce exactly the centralised problem-knowledge that the
+distributed architecture exists to avoid. Modelling the Mediator as an
+in-layer component keeps the architectural diagram honest: \NEXUS{} has
+four agents, not five, and the coordination layer is a mechanism, not a
+master.
+
+\paragraph{Single-round protocol.}
+\NEXUS{} implements the single-round form of the multi-issue protocol:
+agents bid once, the Mediator resolves once. The iterative-narrowing
+extension \cite{hattori2007narrowing}, in which the Mediator returns
+partial-agreement feedback and agents resubmit refined bids over
+several rounds, is not implemented. The decision is a scope decision
+and is justified by the scale of the problem. Iterative narrowing earns
+its cost on problems where the number of agents or the per-agent bid
+count is large enough that the single-round combination space becomes
+intractable; \NEXUS{} has exactly four agents --- fixed by the ISA-95
+decomposition --- and a small per-agent bid count, so the single-round
+search is comfortably tractable and carries the global-optimality
+guarantee of Section~\ref{subsec:mediator}. Implementing iterative
+narrowing would add round management, convergence criteria and an
+agent-side refinement strategy for no gain at the demonstrated scale.
+The extension is a clean future-work item and is revisited in
+Chapter~\ref{ch:conclusions}.
+
+\paragraph{Why multi-issue mediation rather than a single-winner mechanism.}
+The Marketplace mechanism was selected from a field of candidate
+multi-agent coordination paradigms; Table~\ref{tab:paradigms}
+summarises the comparison, which Chapter~\ref{ch:literature} develops in
+full. The decisive consideration is the one already met in
+Section~\ref{subsec:contract-space}. A single-winner mechanism such as
+the Contract Net Protocol \cite{smith1980,deen1997cnp} resolves a
+conflict by awarding it to one bidder; its output is a label, and a
+label cannot express a cross-functional trade-off. Distributed
+constraint optimisation \cite{modi2005adopt,fioretto2018dcop} does
+produce a joint assignment and does so with optimality guarantees, but
+it requires agents to publish full cost tables over the shared
+variables --- precisely the disclosure that the bounded-disclosure
+commitment of Section~\ref{sec:arch-intro} forbids. Bilateral
+negotiation \cite{faratin1998negotiation} scales poorly to four parties
+and has no native representation of joint trade-offs across more than
+two issues; generalised partial global planning \cite{decker1995gpgp}
+and argumentation-based negotiation \cite{rahwan2003argumentation} were
+set aside on grounds of implementation complexity and runtime cost
+respectively. Multi-issue multi-lateral mediation
+\cite{ito2007multiissue,fatima2004multiissue} is the design point that
+satisfies all of \NEXUS{}'s requirements at once: its output is a
+composite contract, its disclosure is bounded to bid summaries, and it
+is tractable at four agents.
+
+\begin{table}[ht]
+\centering
+\caption{Coordination paradigms considered for the Marketplace layer.
+Only multi-issue mediation produces a composite contract, bounds
+disclosure to bid summaries, and is tractable at four agents.
+Chapter~\ref{ch:literature} develops the comparison.}
+\label{tab:paradigms}
+\small
+\begin{tabularx}{\textwidth}{@{}l c c X@{}}
+\toprule
+\textbf{Paradigm} & \textbf{Composite} & \textbf{Bounded} & \textbf{Status in \NEXUS{}} \\
+ & \textbf{output} & \textbf{disclosure} & \\
+\midrule
+Contract Net (single-winner) & no & yes &
+  Rejected: label output cannot express trade-offs. \\
+Bilateral negotiation & partial & yes &
+  Rejected: poor scaling to four parties. \\
+GPGP & yes & partial &
+  Rejected: implementation complexity. \\
+DCOP & yes & \textbf{no} &
+  Rejected: requires full cost-table disclosure. \\
+Argumentation-based & yes & yes &
+  Rejected: runtime cost, ontology requirement. \\
+\textbf{Multi-issue mediation} & \textbf{yes} & \textbf{yes} &
+  \textbf{Selected} (Ito, Hattori \& Klein). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ------------------------------------------------------------
+\section{The Fence Layer}
+\label{sec:arch-fence}
+
+\subsection{Governance as a separate concern}
+\label{subsec:fence-rationale}
+
+The Marketplace layer maximises joint welfare over the agents'
+published bids. It does not, and structurally cannot, guarantee that the
+resulting contract is \emph{safe}. Welfare maximisation is an
+optimisation over preferences; safety is a constraint on outcomes, and
+the two are different things. A contract that runs a machine at the
+fast rate when its modelled health is already near the breakdown
+threshold may well be the joint-welfare maximiser for a given set of
+bids --- if, for instance, \PMA{}'s constraints happened not to fire
+strongly on that conflict --- yet it is plainly unsafe. Some component
+must judge the contract against safety criteria that are independent of
+the agents' preferences.
+
+The Fence layer is that component. It is deliberately a \emph{separate
+layer} rather than a check folded into the Mediator, for the
+separation-of-concerns reason given in
+Section~\ref{subsec:why-layered}: safety rules change at a different
+rate, and are owned by different people, than the coordination
+mechanism. Folding the rules into the Mediator would couple the two and
+would make the Mediator's welfare guarantee conditional on the current
+rule set. Keeping the Fence separate, and having it consume only the
+Marketplace's audit log, keeps the Mediator's guarantee clean and lets
+the safety rules evolve independently. This structural integration of
+safety governance --- as an audit layer over the coordination
+substrate, with no protocol-level coupling --- is one of the
+architectural claims of the thesis.
+
+\subsection{Three-tier classification}
+\label{subsec:fence-tiers}
+
+The Fence holds a suite of \emph{pre-declared safety rules}. Each rule
+is a pair of predicates over a contract and the plant signals
+associated with its conflict: a \emph{violation} predicate, true when
+the contract hard-violates the rule, and a \emph{boundary} predicate,
+true when the contract does not yet violate the rule but lies within a
+narrow band --- ten per cent of the safe range --- of doing so. For
+every contract in the Contract Record the Fence evaluates every rule
+and assigns a severity tier:
+
+\begin{description}[leftmargin=2.6em,style=nextline,itemsep=0.25em]
+  \item[$\sigma_0$ --- Normal.] No rule is violated and no rule is at
+    its boundary. The contract is safe.
+  \item[$\sigma_1$ --- Warning.] No rule is violated, but at least one
+    rule is within its boundary band. The contract is safe but is
+    approaching a safety limit.
+  \item[$\sigma_2$ --- Critical.] At least one rule is hard-violated.
+    The contract breaches a safety limit. A negotiation failure ---
+    where the Marketplace produced no contract at all --- is also
+    classified $\sigma_2$ by convention: the absence of a feasible
+    agreement is itself a critical audit signal.
+\end{description}
+
+The tiers are illustrated in Figure~\ref{fig:arch-fence}. The
+three-tier scheme is a coarse but operationally meaningful summary: it
+distinguishes contracts that are fine ($\sigma_0$), contracts that
+warrant attention ($\sigma_1$), and contracts that demand it
+($\sigma_2$), and it does so with a granularity a plant supervisor can
+act on without further interpretation.
+
+\nexusfigure{fig:arch-fence}{The three-tier Fence classification. Each
+resolved contract is checked against every safety rule and placed in the
+highest tier any rule triggers.}{a decision-flow diagram. A
+contract enters from the left into a box ``evaluate all safety rules''.
+Three labelled outcome bands leave the box: a green band
+``$\sigma_0$ Normal --- no violation, no boundary''; an amber band
+``$\sigma_1$ Warning --- a rule within 10\% of its limit''; a red band
+``$\sigma_2$ Critical --- a rule hard-violated, or negotiation
+failure''. A note beneath reads ``log-only: the tier is recorded, the
+contract is not altered''.}
+
+The default rule suite contains four rules, one anchored on each issue;
+they are listed in Table~\ref{tab:fence-rules}. Each rule encodes a
+domain safety invariant: do not run fast into an imminent breakdown, do
+not skip maintenance on a critically degraded machine, do not waive a
+quality hold on a severely defective batch, do not leave the supply
+horizon empty when the spare-part lead time is long. The rule suite is
+a parameter of the Fence: it can be extended or retuned without any
+change to the other three layers, which is the practical payoff of
+keeping governance in its own layer.
+
+\begin{table}[ht]
+\centering
+\caption{The default Fence safety rule suite. Each rule pairs a hard
+\emph{violation} predicate ($\sigma_2$) with a \emph{boundary}
+predicate ($\sigma_1$) that fires within ten per cent of the safe
+limit.}
+\label{tab:fence-rules}
+\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Rule} & \textbf{Violation condition ($\sigma_2$)} \\
+\midrule
+\texttt{no\_fast\_when\_break\-down\_imminent} &
+  \texttt{production\_rate} is \textsc{fast} while machine health is
+  below the breakdown threshold. \\
+\addlinespace
+\texttt{maintain\_when\_health\_critical} &
+  \texttt{maint\_window} is \textsc{none} while machine health is below
+  the preventive-maintenance threshold. \\
+\addlinespace
+\texttt{hold\_quality\_when\_severe} &
+  \texttt{quality\_action} is \textsc{no\_hold} while the defect rate is
+  at or above twice the quality control limit. \\
+\addlinespace
+\texttt{preorder\_when\_long\_lead} &
+  \texttt{supply\_horizon} is \textsc{h0} while the spare-part lead time
+  exceeds the shortage horizon. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Log-only enforcement, and the path to active governance}
+\label{subsec:fence-logonly}
+
+Within the scope of this thesis the Fence is \emph{log-only}. It
+classifies every contract and emits an audit-record stream, but it does
+not block, alter, or roll back any contract --- a $\sigma_2$ contract is
+executed exactly as a $\sigma_0$ one would be, and the tier is simply
+recorded. The audit stream is consumed downstream: it supports the
+safety analysis of Chapter~\ref{ch:results} and the deployment
+discussion of Chapter~\ref{ch:industrial}.
+
+The log-only stance is a deliberate scope boundary, and it is the right
+one for two reasons. First, it lets the thesis make and defend a clean,
+limited claim --- that safety governance can be \emph{integrated
+structurally}, as an audit layer over the coordination substrate,
+without coupling into the negotiation protocol --- and demonstrate that
+claim without entangling it in the much harder questions that active
+enforcement raises. Second, log-only operation is in fact how a
+governance layer should be commissioned in practice: a plant would run
+the Fence in observe-only mode first, accumulate evidence on how often
+and why each tier fires, tune the rule suite against that evidence, and
+only then enable active control. The log-only Fence of this thesis is
+the first, necessary stage of exactly that commissioning path.
+
+Active runtime enforcement --- a $\sigma_2$ contract being rejected and
+sent back for re-negotiation, or overridden by a safe default --- is the
+natural next step and is treated as future work in
+Chapter~\ref{ch:conclusions}. It raises questions the log-only layer is
+designed to sidestep: how to re-negotiate without looping, how to bound
+the latency an override adds to the coordination event, and how to keep
+an overriding Fence from silently becoming the de-facto coordinator. The
+runtime-verification and shielding literature
+\cite{raju2020runtime,alshiekh2017,konighofer2019shields} offers
+mechanisms for the active case; integrating one of them into the Fence
+layer is a well-defined extension, and the layer boundary --- the Fence
+already consumes the contract stream and already classifies it --- is
+exactly the seam at which an enforcement mechanism would attach.
+
+% ------------------------------------------------------------
+\section{The School Layer}
+\label{sec:arch-school}
+
+The fourth layer of \NEXUS{} is the School. Unlike the other three it is
+\emph{not implemented} within the scope of this thesis: it is described
+here, and carried in the architectural diagram with a dashed boundary,
+so that the architecture is presented complete and so that the
+future-work proposal of Chapter~\ref{ch:conclusions} has a concrete
+home. This section states what the School layer is for and how it would
+attach to the rest of the architecture; it does not claim an
+implemented mechanism.
+
+\paragraph{The problem the School layer addresses.}
+The agents' desire weights --- the weights that scale each agent's
+constraints, and through them its bids --- are fixed parameters in the
+implemented architecture. They are calibrated once and held constant.
+But a real plant is not stationary: product mixes change, machines age,
+suppliers' reliability drifts, and a set of desire weights that
+coordinates well in one operating regime may coordinate poorly in
+another. The School layer is the architectural slot for an outer loop
+that observes operational outcomes and slowly adapts the agents' desire
+weights so that the coordination stays well-tuned as the plant
+evolves.
+
+\paragraph{How it would attach.}
+The School layer would close a slow loop around the other three. It
+would consume the same audit stream the Fence consumes --- the Contract
+Record together with the realised plant outcomes --- and would adjust
+each agent's desire weights in the direction that improves the observed
+outcomes. The adjusted weights would be written back to the agents, and
+the Marketplace would simply see better-calibrated bidders on
+subsequent conflicts; no protocol change is needed, because the desire
+weights are internal to the agents and the bid interface is unchanged.
+The loop is deliberately slow --- it adapts over many coordination
+events, not within one --- which keeps it cleanly separated from the
+per-event coordination loop of the Marketplace.
+
+\paragraph{Candidate mechanisms.}
+Two mechanism families are natural candidates and are recorded here as
+the substance of the future-work proposal. The first is \emph{Bayesian
+weight adaptation}: treat each agent's desire weights as a posterior
+distribution updated from observed outcomes, so that the weights track
+the plant's operating regime with a principled account of uncertainty.
+The second addresses a hazard the first does not. If the weights are
+simply re-fitted to the current regime, the agents may \emph{forget}
+how to coordinate well in a regime that recurs --- catastrophic
+forgetting. Elastic Weight Consolidation \cite{kirkpatrick2017} is the
+reference mechanism for exactly this problem: it slows adaptation of the
+weights that were important for previously seen regimes, so that the
+agents accumulate competence across regimes rather than overwriting it.
+A School layer built on Elastic Weight Consolidation would let \NEXUS{}
+adapt to a changing plant without losing coordination skill it had
+already acquired.
+
+\paragraph{Why it is deferred.}
+The School layer is deferred for scope reasons, not because it is
+ill-defined. The three implemented layers already constitute a complete,
+testable reference architecture for the cross-functional coordination
+problem; continual adaptation is a second-order improvement on top of a
+working coordinator, and folding it into the present scope would broaden
+the empirical work beyond what the thesis timeline allows. Deferring it
+is consistent with the treatment of the School-like adaptation slot in
+the holonic-architecture lineage, where the adaptive element is
+typically named in the architecture and elaborated separately. The
+detailed future-work treatment is given in
+Chapter~\ref{ch:conclusions}.
+
+% ------------------------------------------------------------
+\section{ISA-95 Mapping and Privacy Preservation}
+\label{sec:arch-isa95}
+
+This section consolidates two cross-cutting properties of the
+architecture that the preceding sections established piecewise: the
+mapping of \NEXUS{} onto the ISA-95 Level~3 functional model, and the
+privacy-preservation property that the layered, bid-mediated design
+delivers.
+
+\subsection{Mapping onto ISA-95 Level~3}
+\label{subsec:isa95-map}
+
+ISA-95 Part~1 places Manufacturing Operations Management at Level~3 of
+the functional hierarchy and decomposes it into operations-management
+activities for production, maintenance, quality and inventory
+\cite{isa95part1,sprock2019isa95}. \NEXUS{} maps onto this model
+directly, and the directness of the mapping is itself a design
+argument: an architecture whose components are in one-to-one
+correspondence with the standard's functions can be explained to, and
+owned by, the people who already operate those functions.
+
+\begin{table}[ht]
+\centering
+\caption{Mapping of ISA-95 Level~3 operations-management functions onto
+\NEXUS{} components. Each function becomes one Worker agent owning one
+contract issue; the cross-function coordination the standard leaves
+informal becomes the explicit task of the Marketplace layer.}
+\label{tab:isa95}
+\small
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{ISA-95 L3 function} & \textbf{\NEXUS{} agent} & \textbf{Owned issue}
+  & \textbf{Decision authority} \\
+\midrule
+Production operations management & \PSA{} & \texttt{production\_rate}
+  & Sets the production rate; subordinate voice on the other three issues. \\
+\addlinespace
+Maintenance operations management & \PMA{} & \texttt{maint\_window}
+  & Sets the maintenance window; subordinate voice elsewhere. \\
+\addlinespace
+Quality operations management & \QCA{} & \texttt{quality\_action}
+  & Sets the quality hold; subordinate voice elsewhere. \\
+\addlinespace
+Inventory / supply operations management & \SCA{} & \texttt{supply\_horizon}
+  & Sets the supply horizon; subordinate voice elsewhere. \\
+\addlinespace
+Cross-function coordination (informal in ISA-95) & Marketplace layer
+  & --- & Resolves the joint decision as one composite contract. \\
+\addlinespace
+Operations safety / governance & Fence layer & ---
+  & Audits each contract against pre-declared safety rules. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Table~\ref{tab:isa95} records the mapping. Each of the four Level~3
+functions becomes one Worker agent that owns one issue of the composite
+contract --- the operational realisation of the ``cross-functional
+decision authority'' notion: an agent has decision authority over its
+home issue and a subordinate, damped voice over the others
+(Section~\ref{subsec:mono-dim}). The element ISA-95 leaves implicit ---
+the coordination \emph{between} the four functions --- is exactly what
+\NEXUS{} makes explicit and assigns to the Marketplace layer. The
+standard acknowledges that the functions must be reconciled but does
+not prescribe a mechanism; \NEXUS{} contributes one. The Fence layer,
+finally, occupies the operations-safety slot, auditing the coordinated
+decision against rules that sit outside any single function's remit.
+
+\subsection{Privacy preservation}
+\label{sec:arch-privacy}
+\label{subsec:privacy}
+
+The privacy property of \NEXUS{} can now be stated precisely, because
+all the pieces have been introduced. By construction of the Worker and
+Marketplace layers:
+
+\begin{quote}
+\itshape
+For each coordination event, an agent discloses only its bid set --- a
+bounded number of (utility, region) pairs. It never discloses its
+beliefs, its constraint set, its constraint weights, or its desire
+weights. The Mediator's entire information set is the union of the bid
+sets disclosed for that event.
+\end{quote}
+
+The disclosure is bounded in a strong sense: the number of regions an
+agent publishes per event is capped by a protocol parameter and is
+independent of the size of the agent's underlying belief and constraint
+model. An agent with a rich internal model and an agent with a sparse
+one publish bid sets of the same bounded shape. The Mediator therefore
+never learns an agent's utility \emph{function}; it learns only a
+bounded sample of \emph{values} of that function, at regions the agent
+itself chose to nominate.
+
+Table~\ref{tab:disclosure} places this property against the two
+reference points. A centralised optimiser such as NSGA-III
+\cite{deb2014nsga3} --- used as the centralised comparator in
+Chapter~\ref{ch:results} --- requires the entire joint problem: every
+function's cost structure, in full. Distributed constraint optimisation
+\cite{modi2005adopt,fioretto2018dcop} distributes the computation but
+still requires each agent to publish complete cost tables over the
+shared variables. \NEXUS{} requires neither: it discloses bid summaries
+only. It occupies a distinct point in the disclosure--coordination
+trade-off space --- coordinated joint decisions under bounded
+disclosure --- and that point is the architectural contribution the
+privacy property names.
+
+\begin{table}[ht]
+\centering
+\caption{Information disclosure under three coordination regimes.
+\NEXUS{} produces a coordinated joint decision while disclosing only
+bounded bid summaries.}
+\label{tab:disclosure}
+\small
+\begin{tabularx}{\textwidth}{@{}l X c@{}}
+\toprule
+\textbf{Regime} & \textbf{What each function must disclose} & \textbf{Joint decision} \\
+\midrule
+Centralised optimiser (NSGA-III) &
+  Full cost structure, state, and models --- the entire joint problem. & yes \\
+\addlinespace
+DCOP &
+  Complete cost tables over all shared variables. & yes \\
+\addlinespace
+\textbf{\NEXUS{}} &
+  Bid summaries only: a bounded set of (utility, region) pairs per
+  event. Beliefs, constraints, weights stay private. & yes \\
+\addlinespace
+Siloed operation &
+  Nothing --- but no joint decision is produced. & no \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Two qualifications keep the claim honest. First, the privacy of
+\NEXUS{} is \emph{organisational}, not \emph{cryptographic}. The claim
+is that the architecture never \emph{requires} an agent to publish its
+model --- not that a determined adversary observing many events could
+learn nothing. An observer who collected an agent's bid sets across a
+long run could in principle reconstruct a coarse approximation of the
+agent's utility function from the nominated regions and their annotated
+values. Quantitative, differential-privacy-style guarantees over bid
+disclosure are out of scope and are noted as future work in
+Chapter~\ref{ch:conclusions}. Second, the bound is on disclosure
+\emph{per event}: it is the shape of a single event's disclosure that is
+independent of model size, and the cumulative disclosure over a run
+grows with the number of events, as the first qualification reflects.
+With those qualifications stated, the property stands: \NEXUS{}
+coordinates four functions into a joint decision while requiring each
+to disclose only bounded bid summaries, and that is what no centralised
+or DCOP-style alternative achieves.
+
+% ------------------------------------------------------------
+\section{Implementation Architecture}
+\label{sec:arch-impl}
+
+The architecture described in this chapter is realised as a Python
+codebase; this section gives an overview of its structure and forward
+references to Chapter~\ref{ch:implementation}, where the implementation
+is described in full.
+
+The codebase mirrors the four-layer decomposition. The Worker layer
+lives in an \texttt{agents/} package: a base BDI agent encapsulates the
+shared belief-update and bid-generation pipeline, and four subclasses
+--- one per agent --- contribute the specialised belief update and
+constraint derivation. The Marketplace layer lives in a
+\texttt{marketplace/} package: the Bid Bus, the Mediator with the
+branch-cut A* search of Section~\ref{subsec:mediator}, and the Contract
+Record. The Fence layer lives in a \texttt{fence/} package: the rule
+suite and the three-tier classifier. The composite contract, the bid,
+and the constraint --- the data structures shared across layers --- live
+in a \texttt{core/} package, and the discrete-event plant model lives in
+an \texttt{environment/} package. A \texttt{baselines/} package holds
+the comparison mechanisms used in Chapter~\ref{ch:results}: the siloed
+(uncoordinated) baseline, the rule-based coordination baseline, and a
+single-winner contract-net mechanism. The one-to-one correspondence
+between layers and packages is deliberate: the architectural boundaries
+of this chapter are the module boundaries of the code, so a reader of
+the implementation can navigate it with the four-layer diagram of
+Figure~\ref{fig:arch-layers} in hand.
+
+Two properties of the implementation are worth previewing here because
+they bear on the credibility of the architecture as a whole.
+
+The first is \emph{test coverage}. The implementation carries an
+automated regression suite of more than $240$ tests spanning every
+layer: the core data structures, the mediator search, the environment,
+the Fence classifier, the four agents, the baseline mechanisms, and
+end-to-end integration runs. The suite is what lets the architecture be
+modified with confidence --- the admissible-heuristic correction of
+Section~\ref{subsec:mediator}, for instance, was made and verified
+against it --- and it is described in detail in
+Chapter~\ref{ch:implementation}.
+
+The second is \emph{reproducibility}. A coordination event in \NEXUS{}
+is fully deterministic: given the same conflict announcement and the
+same agent state, the agents generate the same bids --- the bid
+generation defaults to deterministic greedy search
+(Section~\ref{subsec:bid-gen}) --- the Mediator runs the same search,
+and the deterministic tie-break selects the same contract. Determinism
+holds across processes, because the agent-side random sampling is keyed
+by a stable hash rather than by a process-dependent seed. The practical
+consequence, quantified in Chapter~\ref{ch:implementation}, is that a
+whole experimental batch reproduces byte-for-byte on re-execution. For a
+reference architecture this is not a mere convenience: it means every
+empirical claim in Chapter~\ref{ch:results} rests on a computation that
+any reader can re-run and obtain identically.
+
+\subsection*{Summary}
+
+This chapter has presented \NEXUS{} as a four-layer reference
+architecture for cross-functional coordination at ISA-95 Level~3. The
+Worker layer represents each of the four Level~3 functions as a BDI
+agent with mono-dimensional authority over one issue of a composite
+contract. The Marketplace layer resolves each cross-functional conflict
+into a single composite contract by an admissible-heuristic search that
+maximises joint welfare over the agents' published bids, with a
+global-optimality guarantee and a consequent Pareto-optimality
+property. The Fence layer audits every contract against a suite of
+pre-declared safety rules and classifies it into a three-tier severity
+scheme, integrated structurally as a log-only audit layer with no
+coupling into the negotiation protocol. The School layer, deferred as
+future work, provides the architectural slot for continual adaptation
+of the agents' preferences. Across all four layers the architecture
+holds to bounded information disclosure: each function reveals only
+bid summaries, never its internal model, so \NEXUS{} produces a
+coordinated joint decision without the full-disclosure requirement that
+makes centralised optimisation infeasible in practice. The next chapter
+turns from the architecture to its implementation.
