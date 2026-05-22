@@ -1,0 +1,66 @@
+% Figure: sequence of a single coordination event (negotiation sequence).
+\begin{tikzpicture}[nx,
+  head/.style={draw,thick,rounded corners=3pt,minimum height=0.8cm,
+               minimum width=1.7cm,align=center,font=\sffamily\footnotesize},
+  life/.style={nxGray,dashed,thick},
+  msg/.style={-{Latex[length=2.2mm]},thick},
+  num/.style={circle,draw,thick,fill=white,inner sep=0.6pt,
+              font=\sffamily\scriptsize,minimum size=4.2mm},
+  lbl/.style={font=\sffamily\footnotesize,align=center},
+]
+  \def\ytop{0} \def\ybot{-9.0}
+  % ---- lifeline x-positions ----
+  \def\xenv{-6.2} \def\xmed{-3.3}
+  \def\xpsa{0.0}  \def\xpma{1.9} \def\xqca{3.8} \def\xsca{5.7}
+
+  % ---- headers ----
+  \node[head,fill=nxBlueBg,draw=nxBlue]   (henv) at (\xenv,\ytop) {Plant\\environment};
+  \node[head,fill=nxRedBg,draw=nxRed]     (hmed) at (\xmed,\ytop) {Mediator};
+  \node[head,fill=nxGreenBg,draw=nxGreen] (hpsa) at (\xpsa,\ytop) {PSA};
+  \node[head,fill=nxGreenBg,draw=nxGreen] (hpma) at (\xpma,\ytop) {PMA};
+  \node[head,fill=nxGreenBg,draw=nxGreen] (hqca) at (\xqca,\ytop) {QCA};
+  \node[head,fill=nxGreenBg,draw=nxGreen] (hsca) at (\xsca,\ytop) {SCA};
+
+  % ---- lifelines ----
+  \foreach \x in {\xenv,\xmed,\xpsa,\xpma,\xqca,\xsca}
+      \draw[life] (\x,-0.5) -- (\x,\ybot);
+
+  % helper: dots on the four agent lifelines at a given y
+  \newcommand{\agentdots}[1]{%
+      \foreach \x in {\xpsa,\xpma,\xqca,\xsca}
+          \fill[nxGreen] (\x,#1) circle (1.6pt);}
+
+  % ---- (1) conflict detected ----
+  \draw[msg,nxBlue] (\xenv,-1.3) -- (\xmed,-1.3);
+  \node[num] at ($(\xenv,-1.3)!0.5!(\xmed,-1.3)$) {1};
+  \node[lbl,nxBlue,above] at ($(\xenv,-1.3)!0.5!(\xmed,-1.3)$) {conflict event};
+
+  % ---- (2) broadcast announcement ----
+  \draw[msg,nxRed] (\xmed,-2.5) -- (\xsca,-2.5);
+  \agentdots{-2.5}
+  \node[num] at (\xmed+0.55,-2.5) {2};
+  \node[lbl,nxRed,above] at (1.2,-2.5) {broadcast conflict announcement};
+
+  % ---- (3) submit bids ----
+  \draw[msg,nxGreen] (\xsca,-3.9) -- (\xmed,-3.9);
+  \agentdots{-3.9}
+  \node[num] at (\xmed+0.55,-3.9) {3};
+  \node[lbl,nxGreen,above] at (1.2,-3.9) {submit bid sets --- one per agent};
+
+  % ---- (4) mediator self-search ----
+  \draw[msg,nxRed] (\xmed,-4.9) -- ++(1.05,0) -- ++(0,-0.8) -- (\xmed,-5.7);
+  \node[num] at (\xmed-0.05,-5.3) {4};
+  \node[lbl,nxRed,right,align=left] at (\xmed+1.2,-5.3)
+        {branch-cut A* search:\\global welfare-maximising contract};
+
+  % ---- (5) composite contract ----
+  \draw[msg,nxRed] (\xmed,-6.7) -- (\xsca,-6.7);
+  \agentdots{-6.7}
+  \node[num] at (\xmed+0.55,-6.7) {5};
+  \node[lbl,nxRed,above] at (1.2,-6.7) {publish composite contract};
+
+  % ---- (6) apply contract ----
+  \draw[msg,nxBlue] (\xmed,-7.9) -- (\xenv,-7.9);
+  \node[num] at ($(\xmed,-7.9)!0.5!(\xenv,-7.9)$) {6};
+  \node[lbl,nxBlue,above] at ($(\xmed,-7.9)!0.5!(\xenv,-7.9)$) {apply contract};
+\end{tikzpicture}

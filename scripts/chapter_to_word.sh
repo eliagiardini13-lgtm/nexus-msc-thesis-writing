@@ -37,6 +37,9 @@ BASENAME="$(basename "${CHAPTER_TEX}" .tex)"
 OUT="${WORD_DIR}/${BASENAME}.docx"
 mkdir -p "${WORD_DIR}"
 
+# Rasterise the TikZ figures to PNG so pandoc can embed them in Word.
+"${SCRIPT_DIR}/render_figures.sh"
+
 # Human-readable chapter title for the Word title page.
 TITLE="$(grep -m1 -oE '\\chapter\{[^}]*\}' "${CHAPTER_TEX}" | sed -E 's/\\chapter\{(.*)\}/\1/')"
 [[ -z "${TITLE}" ]] && TITLE="Chapter ${1}"

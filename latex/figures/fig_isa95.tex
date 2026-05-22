@@ -1,0 +1,35 @@
+% Figure: the ISA-95 functional hierarchy with NEXUS positioned at Level 3.
+\begin{tikzpicture}[nx,
+  band/.style={draw=nxGray,thick,minimum width=9.8cm,minimum height=0.95cm,
+               align=center,font=\small,rounded corners=2pt},
+]
+  % --- the five ISA-95 levels, bottom (L0) to top (L4) ---
+  \node[band,fill=nxGrayBg] (l0) at (0,0)    {\textbf{Level 0}\, --\, Physical production process};
+  \node[band,fill=nxGrayBg] (l1) at (0,1.30) {\textbf{Level 1}\, --\, Sensing and actuation};
+  \node[band,fill=nxBlueBg] (l2) at (0,2.60) {\textbf{Level 2}\, --\, Monitoring and supervisory control (SCADA)};
+  \node[band,fill=nxRedBg,draw=nxRed,line width=1.1pt,minimum height=2.0cm]
+                            (l3) at (0,4.30) {};
+  \node[band,fill=nxBlueBg] (l4) at (0,6.05) {\textbf{Level 4}\, --\, Business planning and logistics (ERP)};
+
+  % --- Level 3 interior ---
+  \node[font=\small,anchor=north] at ([yshift=-5pt]l3.north)
+        {\textbf{Level 3}\, --\, Manufacturing Operations Management};
+  \node[nxblock,fill=white,draw=nxRed,line width=1pt,anchor=south,
+        minimum width=7.2cm] at ([yshift=6pt]l3.south)
+        {\textbf{NEXUS}\;\;\textemdash\;\;cross-functional coordination architecture\\[1pt]
+         \nxsmall production\;\textbullet\;maintenance\;\textbullet\;quality\;\textbullet\;supply};
+
+  % --- vertical information-flow arrows on the right ---
+  \draw[nxbiarrow,nxBlue] (5.45,2.05) -- (5.45,3.55);
+  \node[nxlabel,nxBlue,right,align=left] at (5.55,2.80)
+        {control commands\\[-1pt]\& plant state};
+  \draw[nxbiarrow,nxBlue] (5.45,4.95) -- (5.45,6.45);
+  \node[nxlabel,nxBlue,right,align=left] at (5.55,5.70)
+        {production targets\\[-1pt]\& performance reports};
+
+  % --- scope bracket on the left ---
+  \draw[nxRed,thick,decorate,decoration={brace,amplitude=6pt,mirror}]
+        ($(l3.south west)+(-0.18,0)$) -- ($(l3.north west)+(-0.18,0)$);
+  \node[nxlabel,nxRed,rotate=90,anchor=south] at ($(l3.west)+(-0.55,0)$)
+        {scope of this thesis};
+\end{tikzpicture}

@@ -24,7 +24,13 @@ ahead spare parts are ordered. ISA-95 decomposes this layer into four
 operations-management functions --- production, maintenance, quality,
 and inventory (here treated as supply) --- and models each as a
 separate activity model with its own information flows and its own
-performance criteria \cite{isa95part1}.
+performance criteria \cite{isa95part1}. Figure~\ref{fig:isa95} situates
+Level~3, and \NEXUS{} within it, in the ISA-95 functional hierarchy.
+
+\nexustikzfigure{fig:isa95}{The ISA-95 functional hierarchy. \NEXUS{}
+operates at Level~3 --- Manufacturing Operations Management --- between
+supervisory process control (Level~2) and business planning and
+logistics (Level~4), and is the scope of this thesis.}{fig_isa95}
 
 The decomposition is organisationally convenient but it is not
 decisionally clean. The four functions are \emph{coupled}: a decision
@@ -146,18 +152,12 @@ information flows between them. Table~\ref{tab:layers} summarises the
 responsibility, the principal components, and the inbound and outbound
 interface of each layer.
 
-\nexusfigure{fig:arch-layers}{The four-layer \NEXUS{} reference
+\nexustikzfigure{fig:arch-layers}{The four-layer \NEXUS{} reference
 architecture. Solid arrows carry information exchanged during a
 coordination event; the dashed boundary of the School layer marks it as
-an architectural slot deferred to future work.}{a stacked
-four-layer block diagram. Top to bottom: Worker layer (four BDI agent
-boxes PSA, PMA, QCA, SCA); Marketplace layer (Bid Bus, Mediator,
-Contract Record); Fence layer (three-tier classifier); School layer
-(drawn with a dashed border). Upward arrows from Workers to Marketplace
-labelled ``bid summaries''; a downward arrow from Marketplace to Workers
-labelled ``composite contract''; an arrow from the Contract Record into
-the Fence classifier labelled ``audit log''; dashed arrows from School
-back to the Workers labelled ``adapted weights (future work)''.}
+an architectural slot deferred to future work. The plant environment is
+the discrete-event simulation against which the architecture is
+evaluated.}{fig_arch_layers}
 
 \begin{table}[ht]
 \centering
@@ -255,18 +255,12 @@ Figure~\ref{fig:arch-flow}.
     contract into one of three safety tiers.
 \end{enumerate}
 
-\nexusfigure{fig:arch-flow}{Information flow of a single coordination
-event. The five phases run left to right; the Fence audit in phase~5 is
-post-hoc and does not feed back into the negotiation.}{a
-sequence diagram with four agent lifelines (PSA, PMA, QCA, SCA), a Bid
-Bus lifeline, a Mediator lifeline, a Contract Record lifeline and a
-Fence lifeline. Messages, top to bottom: conflict announcement broadcast
-from Bid Bus to all four agents; four bid-set messages from the agents
-to the Mediator; an internal ``branch-cut A* search'' self-message on
-the Mediator; a composite-contract message from the Mediator broadcast
-to the four agents; an append message from the Mediator to the Contract
-Record; an audit-log read from the Contract Record to the Fence; a
-self-message ``three-tier classification'' on the Fence.}
+\nexustikzfigure{fig:arch-flow}{Sequence of a single coordination event.
+The plant environment raises a conflict; the Mediator broadcasts the
+announcement; the four agents return bid sets; the Mediator runs its
+branch-cut A* search and publishes the composite contract; the contract
+is applied. The Fence audit of phase~5 is post-hoc and is omitted from
+the sequence.}{fig_arch_flow}
 
 Two properties of this flow are load-bearing for the rest of the
 chapter. First, the negotiation is \emph{single-round}: agents bid
@@ -436,19 +430,11 @@ desires generate a private set of weighted constraints over the joint
 contract space. The shared stage is bid generation, which runs the same
 four-step procedure for every agent (Section~\ref{subsec:bid-gen}).
 
-\nexusfigure{fig:arch-bdi}{Internal structure of a Worker agent. The
+\nexustikzfigure{fig:arch-bdi}{Internal structure of a Worker agent,
+with the Preventive Maintenance Agent shown as the example. The
 belief-update and constraint-derivation stages are specialised per
-agent; the bid-generation stage is shared. Only the bid set crosses the
-agent boundary.}{a single agent box, internally divided into
-``Beliefs'' (a small database icon), ``Desires'' (a weighted goal list),
-and a deliberation pipeline with three stages drawn left to right:
-``update beliefs'' (fed by an incoming observation arrow),
-``derive constraints'' (producing a stack of weighted constraint icons),
-and ``generate bids'' (producing bid icons). An incoming arrow on the
-left is labelled ``conflict announcement''; the only outgoing arrow, on
-the right, is labelled ``bid set'' and crosses the dashed agent
-boundary. Beliefs and Desires are shown entirely inside the boundary,
-with a small lock icon indicating they never cross it.}
+agent; the bid-generation stage is shared. Beliefs and desires stay
+inside the agent boundary; only the bid set crosses it.}{fig_arch_bdi}
 
 \subsection{Mono-dimensional outputs and domain authority}
 \label{subsec:mono-dim}
@@ -806,6 +792,8 @@ each not-yet-chosen agent, the largest utility any of its bids could
 contribute. Because branch-cutting can only ever \emph{remove}
 feasible completions, $h(p)$ never underestimates the true utility
 reachable from $p$: it is an \emph{admissible} heuristic in the sense of
+% TODO: replace the prose attribution below with \cite{hart1968astar}
+% once Hart, Nilsson \& Raphael (1968) is added to nexus.bib.
 the A* algorithm of Hart, Nilsson and Raphael. Expanding the queue in
 decreasing order of $f$ is therefore A* search on a maximisation
 problem, and the standard A* optimality argument applies: \emph{the
@@ -830,18 +818,12 @@ to deliver it, and the two must be verified to agree.
 Figure~\ref{fig:arch-mediator} illustrates the search on a small
 example. Algorithm~\ref{lst:mediator} gives the procedure in pseudocode.
 
-\nexusfigure{fig:arch-mediator}{Branch-cut A* search over partial bid
-combinations. Each level of the tree fixes one more agent's bid; a
-crossed node is a branch-cut (empty joint region); the highlighted path
-is the first complete combination popped, which is the global welfare
-maximiser.}{a four-level search tree. The root is labelled
-``no bids chosen''. Level~1 nodes fix a \PMA{} bid, level~2 a \QCA{}
-bid, level~3 a \PSA{} bid, level~4 an \SCA{} bid. Several interior nodes
-are marked with a cross and the label ``branch-cut: empty joint
-region''. Each node carries a small label ``$f = g + h$''. One
-root-to-leaf path is drawn in bold and labelled ``first complete pop ---
-global welfare maximiser''. A side caption notes that bold-path leaf
-utility equals $\max \sum u_i$.}
+\nexustikzfigure{fig:arch-mediator}{Branch-cut A* search over partial
+bid combinations. Each level of the tree fixes one more agent's bid;
+each node carries its priority key $f = g + h$; a node shaded red is a
+branch-cut (empty joint region); the bold path is the first complete
+combination popped, which is the global welfare maximiser. The values
+shown are illustrative.}{fig_arch_mediator}
 
 \begin{lstlisting}[caption={The mediator's branch-cut A* search
 (pseudocode). The priority key f = g + h is Equation~(3.6).},label={lst:mediator}]
@@ -976,6 +958,22 @@ Argumentation-based & yes & yes &
 \end{tabularx}
 \end{table}
 
+Selecting multi-issue mediation settles the \emph{architectural}
+question --- the Marketplace layer produces composite contracts under
+bounded disclosure. It does not settle the \emph{empirical} one:
+whether the joint, dynamic mediation of \NEXUS{} actually outperforms a
+simpler static alternative, in which each domain applies a fixed
+threshold rule with no negotiation at all. That question is deferred to
+Chapter~\ref{ch:results}, which compares \NEXUS{} against both an
+uncoordinated siloed baseline and a rule-based coordination baseline
+across three benchmark families --- including an industrial automotive
+benchmark whose objectives (product-mix cost asymmetry, rush-order
+priorities, a maintenance-budget cap) are designed to be sensitive to
+the cross-functional trade-offs on which joint mediation and static
+rules are expected to diverge.
+% Forward reference to the DD-V5-021 coordination comparison and the
+% DD-V5-022 industrial automotive benchmark; full treatment in Chapter 5.
+
 % ------------------------------------------------------------
 \section{The Fence Layer}
 \label{sec:arch-fence}
@@ -1041,16 +1039,10 @@ warrant attention ($\sigma_1$), and contracts that demand it
 ($\sigma_2$), and it does so with a granularity a plant supervisor can
 act on without further interpretation.
 
-\nexusfigure{fig:arch-fence}{The three-tier Fence classification. Each
-resolved contract is checked against every safety rule and placed in the
-highest tier any rule triggers.}{a decision-flow diagram. A
-contract enters from the left into a box ``evaluate all safety rules''.
-Three labelled outcome bands leave the box: a green band
-``$\sigma_0$ Normal --- no violation, no boundary''; an amber band
-``$\sigma_1$ Warning --- a rule within 10\% of its limit''; a red band
-``$\sigma_2$ Critical --- a rule hard-violated, or negotiation
-failure''. A note beneath reads ``log-only: the tier is recorded, the
-contract is not altered''.}
+\nexustikzfigure{fig:arch-fence}{The three-tier Fence classification.
+Each resolved contract is checked against every safety rule and placed
+in the highest tier any rule triggers; the ``Future'' column previews
+the active runtime enforcement deferred to Chapter~\ref{ch:conclusions}.}{fig_arch_fence}
 
 The default rule suite contains four rules, one anchored on each issue;
 they are listed in Table~\ref{tab:fence-rules}. Each rule encodes a
@@ -1292,7 +1284,16 @@ model. An agent with a rich internal model and an agent with a sparse
 one publish bid sets of the same bounded shape. The Mediator therefore
 never learns an agent's utility \emph{function}; it learns only a
 bounded sample of \emph{values} of that function, at regions the agent
-itself chose to nominate.
+itself chose to nominate. Figure~\ref{fig:infoflow} traces the
+information flow of a coordination event and marks the privacy boundary
+that this property formalises.
+
+\nexustikzfigure{fig:infoflow}{Information flow and privacy boundaries
+of a coordination event. Plant signals are classified into a conflict
+announcement that carries shared signals only; each agent reads that
+announcement together with its own ISA-95 domain state --- never a
+peer's --- and the Mediator sees only the published bid
+summaries.}{fig_infoflow}
 
 Table~\ref{tab:disclosure} places this property against the two
 reference points. A centralised optimiser such as NSGA-III
@@ -1359,7 +1360,15 @@ or DCOP-style alternative achieves.
 The architecture described in this chapter is realised as a Python
 codebase; this section gives an overview of its structure and forward
 references to Chapter~\ref{ch:implementation}, where the implementation
-is described in full.
+is described in full. Figure~\ref{fig:lifecycle} first recapitulates the
+architecture as an end-to-end operational sequence, from the detection
+of a plant condition to the safety audit of the resulting contract.
+
+\nexustikzfigure{fig:lifecycle}{The end-to-end decision lifecycle of a
+coordination event, from the environment detecting a domain condition,
+through negotiation and contract execution, to the Fence safety audit.
+Bounded disclosure, joint welfare maximisation, and the log-only audit
+trail are annotated at the stages where they apply.}{fig_lifecycle}
 
 The codebase mirrors the four-layer decomposition. The Worker layer
 lives in an \texttt{agents/} package: a base BDI agent encapsulates the
@@ -1385,7 +1394,7 @@ Two properties of the implementation are worth previewing here because
 they bear on the credibility of the architecture as a whole.
 
 The first is \emph{test coverage}. The implementation carries an
-automated regression suite of more than $240$ tests spanning every
+automated regression suite of $245$ tests spanning every
 layer: the core data structures, the mediator search, the environment,
 the Fence classifier, the four agents, the baseline mechanisms, and
 end-to-end integration runs. The suite is what lets the architecture be
@@ -1407,6 +1416,28 @@ whole experimental batch reproduces byte-for-byte on re-execution. For a
 reference architecture this is not a mere convenience: it means every
 empirical claim in Chapter~\ref{ch:results} rests on a computation that
 any reader can re-run and obtain identically.
+
+One scope boundary of the present implementation should be stated
+plainly, because it bears on the empirical chapters. The conflict
+announcement an agent receives carries the conflict type, the machine
+identifier, and a small set of shared plant signals --- machine health,
+defect rate, spare-part lead time --- and nothing more. It does
+\emph{not} carry the wider cross-functional context that a fully
+industrial setting would supply: the priority of the job currently on
+the machine, the product variant being processed, or the remaining
+state of a maintenance budget. Within the benchmark families on which
+\NEXUS{} is characterised in this thesis this is sufficient, because
+those benchmarks do not express such context. The industrial automotive
+benchmark introduced in Chapter~\ref{ch:results} does express it, and
+exposes a corresponding requirement: for the agents to coordinate well
+on context-dependent objectives, that context must be made visible in
+the announcement and in the agents' constraint derivation --- a
+\emph{mechanism-awareness} extension of the present design. The
+extension is a candidate item for future work and is taken up in
+Chapter~\ref{ch:conclusions}; it changes the information content of the
+announcement, not the four-layer architecture of this chapter.
+% Mechanism-awareness gap surfaced by the DD-V5-022 industrial
+% automotive benchmark; candidate extension DD-V5-023. See Chapters 5 and 7.
 
 \subsection*{Summary}
 

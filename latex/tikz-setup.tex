@@ -1,0 +1,42 @@
+% ============================================================
+%  tikz-setup.tex — shared TikZ configuration for thesis figures.
+%
+%  Input by preamble.tex (main build) and by the standalone wrapper
+%  in scripts/render_figures.sh (Word/PNG build). Keeps the figure
+%  styling identical across both pipelines.
+% ============================================================
+\usepackage{tikz}
+\usepackage{adjustbox}
+\usetikzlibrary{shapes.geometric,shapes.misc,arrows.meta,positioning,calc,fit,
+                backgrounds,decorations.pathreplacing,decorations.markings}
+
+% --- Colour palette (style brief: blue=info, green=workers,
+%     red=mediator/critical, gray=passive, yellow=warning) ---
+\definecolor{nxBlue}{HTML}{2C6FB5}
+\definecolor{nxBlueBg}{HTML}{DCE9F5}
+\definecolor{nxGreen}{HTML}{3F8F4F}
+\definecolor{nxGreenBg}{HTML}{DEEEE0}
+\definecolor{nxRed}{HTML}{B83A2E}
+\definecolor{nxRedBg}{HTML}{F6DAD6}
+\definecolor{nxGray}{HTML}{6E7B7C}
+\definecolor{nxGrayBg}{HTML}{E9EBEB}
+\definecolor{nxYellow}{HTML}{B8902A}
+\definecolor{nxYellowBg}{HTML}{FBF0CE}
+\definecolor{nxOrange}{HTML}{C76B27}
+\definecolor{nxOrangeBg}{HTML}{F7E3D1}
+
+% --- Inline font shortcut used inside figure node text ---
+\providecommand{\nxsmall}{}
+\renewcommand{\nxsmall}{\normalfont\sffamily\scriptsize}
+
+% --- Shared styles ---
+\tikzset{
+  nx/.style={font=\sffamily},
+  nxblock/.style={rounded corners=3pt,draw,thick,align=center,
+                  font=\sffamily\small,inner sep=5pt},
+  nxlabel/.style={font=\sffamily\footnotesize},
+  nxsmall/.style={font=\sffamily\scriptsize},
+  nxarrow/.style={-{Latex[length=2.4mm]},thick},
+  nxdash/.style={-{Latex[length=2.4mm]},thick,dashed},
+  nxbiarrow/.style={{Latex[length=2.2mm]}-{Latex[length=2.2mm]},thick},
+}

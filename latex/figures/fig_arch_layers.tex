@@ -1,0 +1,49 @@
+% Figure: the four-layer NEXUS reference architecture.
+\begin{tikzpicture}[nx,
+  layer/.style={draw,thick,rounded corners=4pt,minimum width=11.4cm,
+                align=center,font=\small},
+  comp/.style={draw,thick,rounded corners=3pt,fill=white,align=center,
+               font=\sffamily\footnotesize,minimum height=0.95cm,inner sep=4pt},
+  agent/.style={comp,minimum width=2.3cm},
+  lflow/.style={-{Latex[length=2.6mm]},thick},
+]
+  % ---- layer bands ----
+  \node[layer,fill=nxGreenBg,draw=nxGreen,minimum height=1.9cm] (workers) at (0,6.1) {};
+  \node[layer,fill=nxRedBg,draw=nxRed,minimum height=1.9cm]     (market)  at (0,3.5) {};
+  \node[layer,fill=nxOrangeBg,draw=nxOrange,minimum height=1.5cm](fence)  at (0,1.35) {};
+  \node[layer,fill=nxGrayBg,draw=nxGray,dashed,minimum height=1.5cm](school) at (0,-0.7){};
+
+  % ---- layer titles ----
+  \node[font=\small\bfseries,nxGreen,anchor=north west]  at ([xshift=4pt,yshift=-3pt]workers.north west){Worker layer};
+  \node[font=\small\bfseries,nxRed,anchor=north west]    at ([xshift=4pt,yshift=-3pt]market.north west) {Marketplace layer};
+  \node[font=\small\bfseries,nxOrange,anchor=north west] at ([xshift=4pt,yshift=-3pt]fence.north west)  {Fence layer};
+  \node[font=\small\bfseries,nxGray,anchor=north west]   at ([xshift=4pt,yshift=-3pt]school.north west) {School layer\;\textit{(future work)}};
+
+  % ---- worker agents ----
+  \node[agent,draw=nxGreen] (psa) at (-4.05,5.7) {\textbf{PSA}\\\nxsmall production};
+  \node[agent,draw=nxGreen] (pma) at (-1.35,5.7) {\textbf{PMA}\\\nxsmall maintenance};
+  \node[agent,draw=nxGreen] (qca) at ( 1.35,5.7) {\textbf{QCA}\\\nxsmall quality};
+  \node[agent,draw=nxGreen] (sca) at ( 4.05,5.7) {\textbf{SCA}\\\nxsmall supply};
+
+  % ---- marketplace components ----
+  \node[comp,draw=nxRed,minimum width=2.8cm] (bus) at (-3.6,3.15) {Bid Bus};
+  \node[comp,draw=nxRed,minimum width=3.0cm] (med) at ( 0.0,3.15) {Mediator\\\nxsmall branch-cut A* search};
+  \node[comp,draw=nxRed,minimum width=2.8cm] (rec) at ( 3.7,3.15) {Contract Record};
+
+  % ---- fence / school components ----
+  \node[comp,draw=nxOrange,minimum width=8.6cm] (cls) at (0,1.05)
+        {Three-tier classifier\;\;\nxsmall($\sigma_0$ normal\,/\,$\sigma_1$ warning\,/\,$\sigma_2$ critical) --- log-only};
+  \node[comp,draw=nxGray,dashed,minimum width=8.6cm] (ewc) at (0,-1.0)
+        {Continual weight adaptation\;\;\nxsmall(Bayesian update\,/\,elastic weight consolidation)};
+
+  % ---- environment ----
+  \node[comp,draw=nxBlue,fill=nxBlueBg,minimum width=2.4cm,minimum height=2.6cm]
+        (env) at (-7.55,5.4) {Plant\\environment\\[2pt]\nxsmall discrete-event\\\nxsmall simulation};
+
+  % ---- information flows ----
+  \draw[lflow,nxBlue] (env.east) -- node[above,nxsmall,nxBlue]{conflict} node[below,nxsmall,nxBlue]{events} (workers.west|-env.east);
+  \draw[lflow,nxGreen] ($(workers.south)+(-1.6,0)$) -- node[left,nxsmall,nxGreen,align=right]{bid\\summaries} ($(market.north)+(-1.6,0)$);
+  \draw[lflow,nxRed]   ($(market.north)+(1.6,0)$)  -- node[right,nxsmall,nxRed,align=left]{composite\\contract} ($(workers.south)+(1.6,0)$);
+  \draw[lflow,nxOrange] (rec.south) -- node[right,nxsmall,nxOrange]{audit log} (rec.south|-fence.north);
+  \draw[nxdash,nxGray] (cls.south) -- node[right,nxsmall,nxGray]{operational history} (cls.south|-school.north);
+\end{tikzpicture}

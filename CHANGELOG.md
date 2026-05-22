@@ -5,6 +5,59 @@ WHAT changed, WHY, and WHERE.
 
 ---
 
+## 2026-05-22 — Chapter 3: TikZ figures + fixes + polish
+
+**WHAT.** Replaced the 5 figure placeholders with native TikZ diagrams,
+added 3 further diagrams (8 figures total), and applied four content
+fixes. Chapter 3 is now ~28 PDF pages.
+
+**WHY.** The first draft used framed-box placeholders. The architecture
+chapter needs real diagrams; TikZ keeps them native (vector, no external
+image assets) and editable in the LaTeX source.
+
+**WHERE.**
+- `latex/tikz-setup.tex` (new) — shared TikZ libraries, colour palette,
+  styles; input by `preamble.tex` and by the figure renderer.
+- `latex/figures/fig_*.tex` (8 new) — `fig_isa95` (ISA-95 levels +
+  NEXUS at L3), `fig_arch_layers` (4-layer architecture), `fig_arch_bdi`
+  (Worker BDI internals), `fig_arch_flow` (negotiation sequence),
+  `fig_arch_mediator` (branch-cut A* search tree), `fig_arch_fence`
+  (3-tier classification), `fig_infoflow` (information flow + privacy
+  boundaries), `fig_lifecycle` (end-to-end decision lifecycle).
+- `latex/preamble.tex` — input `tikz-setup`; new `\nexustikzfigure`
+  macro (adjustbox-scaled TikZ inclusion).
+- `latex/chapters/03_architecture.tex` — 5 placeholders -> TikZ; 3 new
+  figures placed in 3.1, 3.7, 3.8.
+- `scripts/render_figures.sh` (new) — rasterises each TikZ figure to PNG
+  via a standalone wrapper, for the Word pipeline.
+- `scripts/chapter_to_word.sh` — now renders figures before pandoc;
+  `scripts/pandoc-macros.tex` — `\nexustikzfigure` -> `\includegraphics`.
+- `.gitignore` — ignore `latex/figures/*.png` and `*.pdf`.
+
+**Fixes.**
+1. Test count: "more than 240" -> "245" (Section 3.8).
+2. A* attribution: prose reference to Hart, Nilsson & Raphael kept; a
+   `% TODO` marks where `\cite{hart1968astar}` goes once the entry is
+   added to `nexus.bib` (bibliography not modified, per task constraint).
+3. Industrial-benchmark forward reference added to Section 3.4 (after
+   the paradigm table) and Section 3.8 — points to the Chapter 5
+   coordination comparison and the industrial automotive benchmark.
+   DD-V5-021/022 kept in LaTeX comments, not in reader-facing prose.
+4. Mechanism-limitations paragraph added to Section 3.8: the conflict
+   announcement carries domain-local signals only; cross-functional
+   context (job priority, product variant, budget state) is absent and
+   is a mechanism-awareness extension (future work, Chapter 7).
+
+**Build status.** LaTeX clean (42 pages, 0 undefined citations/refs,
+2 negligible overfull hboxes < 7pt). Word regenerated:
+`word/03_architecture.docx` with all 8 figures embedded as PNG.
+
+**Still deferred.** Hart 1968 A* citation (awaiting a `nexus.bib`
+entry); test count 245 follows the setup brief — `THESIS_STATE.md`
+still records 230 and should be reconciled when Chapter 4 is drafted.
+
+---
+
 ## 2026-05-21 — Writing workspace setup + Chapter 3 first draft
 
 **WHAT.** Created the `Writing/` workspace: LaTeX template, build

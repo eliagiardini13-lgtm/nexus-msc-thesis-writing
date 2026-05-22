@@ -1,0 +1,55 @@
+% Figure: branch-cut A* search over partial bid combinations.
+\begin{tikzpicture}[nx,
+  nd/.style={draw,thick,rounded corners=2pt,fill=white,
+             font=\sffamily\scriptsize,align=center,
+             minimum width=1.5cm,minimum height=0.72cm,inner sep=2pt},
+  open/.style={nd,draw=nxGray},
+  cut/.style={nd,draw=nxRed,fill=nxRedBg},
+  win/.style={nd,draw=nxGreen,fill=nxGreenBg,line width=1pt},
+  edge/.style={-{Latex[length=1.8mm]},nxGray,thick},
+  bold/.style={-{Latex[length=2.2mm]},nxGreen,line width=1.4pt},
+  depthlbl/.style={font=\sffamily\scriptsize\itshape,nxGray,anchor=east},
+]
+  % ---- depth guide labels (left) ----
+  \node[depthlbl] at (-6.0, 4.0) {root};
+  \node[depthlbl] at (-6.0, 2.6) {fix PMA bid};
+  \node[depthlbl] at (-6.0, 1.2) {fix QCA bid};
+  \node[depthlbl] at (-6.0,-0.2) {fix PSA bid};
+  \node[depthlbl] at (-6.0,-1.6) {fix SCA bid};
+
+  % ---- nodes ----
+  \node[open] (r)  at (0,4.0)     {no bids\\$f=g{+}h$};
+  \node[open] (a1) at (-2.7,2.6)  {PMA $b_1$\\$f=92$};
+  \node[open] (a2) at ( 2.7,2.6)  {PMA $b_2$\\$f=88$};
+  \node[win]  (b1) at (-4.0,1.2)  {QCA $b_1$\\$f=90$};
+  \node[cut]  (b2) at (-1.5,1.2)  {QCA $b_2$};
+  \node[open] (b3) at ( 2.7,1.2)  {QCA $b_1$\\$f=84$};
+  \node[win]  (c1) at (-4.0,-0.2) {PSA $b_2$\\$f=90$};
+  \node[cut]  (c2) at ( 2.7,-0.2) {PSA $b_1$};
+  \node[win]  (d1) at (-4.0,-1.6) {SCA $b_1$\\$f=89$};
+
+  % ---- edges ----
+  \draw[edge] (r) -- (a2);
+  \draw[edge] (a2) -- (b3);
+  \draw[edge] (b3) -- (c2);
+  \draw[edge] (a1) -- (b2);
+  \draw[bold] (r)  -- (a1);
+  \draw[bold] (a1) -- (b1);
+  \draw[bold] (b1) -- (c1);
+  \draw[bold] (c1) -- (d1);
+
+  % ---- cut markers (small, at node corner) ----
+  \node[nxRed,font=\footnotesize\bfseries] at ([xshift=-3pt,yshift=-2pt]b2.north east) {$\times$};
+  \node[nxRed,font=\footnotesize\bfseries] at ([xshift=-3pt,yshift=-2pt]c2.north east) {$\times$};
+
+  % ---- winning-path annotation ----
+  \node[font=\sffamily\scriptsize\bfseries,nxGreen,align=left,anchor=west]
+        at (-2.95,-1.6) {first complete combination popped\\
+                         $\Rightarrow$ global welfare maximiser};
+
+  % ---- legend ----
+  \node[font=\sffamily\scriptsize,align=left,anchor=west] at (-6.0,-3.05)
+       {{\color{nxRed}\rule{1.4mm}{1.4mm}}\, branch-cut --- partial combination, empty joint region
+        \qquad
+        {\color{nxGreen}\rule{1.4mm}{1.4mm}}\, bold path --- the A* winning combination};
+\end{tikzpicture}

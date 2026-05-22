@@ -20,5 +20,9 @@
 latex/main.pdf
 word/*.docx
 
+# --- Rendered TikZ figures (PNG/PDF; sources are figures/*.tex) ---
+latex/figures/*.png
+latex/figures/*.pdf
+
 # --- OS ---
 .DS_Store

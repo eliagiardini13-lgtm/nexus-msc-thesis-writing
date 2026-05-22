@@ -1,0 +1,40 @@
+% Figure: end-to-end decision lifecycle of a coordination event.
+\begin{tikzpicture}[nx,
+  lcstep/.style={draw,thick,rounded corners=3pt,align=center,
+               font=\sffamily\scriptsize,minimum width=3.0cm,
+               minimum height=1.5cm,inner sep=3pt},
+  num/.style={circle,draw,thick,fill=white,inner sep=0.5pt,
+              font=\sffamily\scriptsize\bfseries,minimum size=4.6mm},
+  arr/.style={-{Latex[length=2.6mm]},thick,nxGray},
+  note/.style={font=\sffamily\scriptsize\itshape,align=center},
+]
+  \def\rowtop{1.7} \def\rowbot{-1.9} \def\dx{4.0}
+  % ---- top row, lcsteps 1-4 (left to right) ----
+  \node[lcstep,fill=nxBlueBg,draw=nxBlue]   (s1) at (-6,\rowtop) {Environment\\detects a\\domain condition};
+  \node[lcstep,fill=nxBlueBg,draw=nxBlue]   (s2) at (-2,\rowtop) {Conflict event\\triggered};
+  \node[lcstep,fill=nxRedBg,draw=nxRed]     (s3) at ( 2,\rowtop) {Mediator broadcasts\\conflict\\announcement};
+  \node[lcstep,fill=nxGreenBg,draw=nxGreen] (s4) at ( 6,\rowtop) {Workers compute\\bid sets};
+  % ---- bottom row, lcsteps 5-8 (right to left) ----
+  \node[lcstep,fill=nxRedBg,draw=nxRed]     (s5) at ( 6,\rowbot) {Mediator A* search\\$\Rightarrow$ composite\\contract};
+  \node[lcstep,fill=nxBlueBg,draw=nxBlue]   (s6) at ( 2,\rowbot) {Environment\\applies the\\contract};
+  \node[lcstep,fill=nxBlueBg,draw=nxBlue]   (s7) at (-2,\rowbot) {Operational\\outcomes recorded};
+  \node[lcstep,fill=nxOrangeBg,draw=nxOrange](s8) at (-6,\rowbot) {Fence audits +\\classifies the\\contract};
+
+  % ---- lcstep numbers ----
+  \foreach \i/\n in {s1/1,s2/2,s3/3,s4/4,s5/5,s6/6,s7/7,s8/8}
+      \node[num] at ([xshift=2pt,yshift=-2pt]\i.north west) {\n};
+
+  % ---- arrows ----
+  \draw[arr] (s1) -- (s2);
+  \draw[arr] (s2) -- (s3);
+  \draw[arr] (s3) -- (s4);
+  \draw[arr] (s4) -- (s5);
+  \draw[arr] (s5) -- (s6);
+  \draw[arr] (s6) -- (s7);
+  \draw[arr] (s7) -- (s8);
+
+  % ---- annotations ----
+  \node[note,nxGreen,above=2pt of s4] {bounded disclosure\\(bid summaries only)};
+  \node[note,nxRed,below=2pt of s5]   {joint welfare\\maximisation};
+  \node[note,nxOrange,below=2pt of s8]{safety audit trail\\(log-only)};
+\end{tikzpicture}

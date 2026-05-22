@@ -34,7 +34,10 @@ Writing/
 │   │   ├── 05_results.tex        stub  (drafting: Week 9)
 │   │   ├── 06_industrial.tex     stub  (drafting: Week 9-10)
 │   │   └── 07_conclusions.tex    stub  (drafting: Week 11)
-│   ├── figures/              generated figures (placeholders for now)
+│   ├── tikz-setup.tex        shared TikZ styles/colours for figures
+│   ├── figures/
+│   │   ├── fig_*.tex         native TikZ figure sources
+│   │   └── fig_*.png         rendered figures for Word (generated)
 │   ├── bibliography/
 │   │   └── nexus.bib  ->  ../../../Bibliography/nexus.bib   (symlink)
 │   └── main.pdf              compiled output (generated)
@@ -43,6 +46,7 @@ Writing/
 │   ├── build_latex.sh        compile the full thesis to PDF
 │   ├── chapter_to_word.sh    convert one chapter LaTeX -> Word
 │   ├── build_all.sh          all chapters to Word + full thesis PDF
+│   ├── render_figures.sh     rasterise TikZ figures to PNG (for Word)
 │   ├── pandoc-macros.tex     pandoc-friendly macro definitions
 │   └── reference.docx        Word style template (Calibri 11pt, 1.5 spacing)
 ├── README.md                 this file
@@ -137,10 +141,14 @@ results). Per `Context/THESIS_PLAN_2026-05-20.md`:
 - **Citations** use `\cite{key}` against `nexus.bib`. Only keys already
   present in `nexus.bib` are cited — the bibliography file is read-only
   for this workspace.
-- **Figures** are placeholders for now: the `\nexusfigure{label}{caption}
-  {description}` macro renders a framed box and keeps the caption, label,
-  and cross-references valid in both PDF and Word. Real figures drop into
-  `latex/figures/` in a later phase.
+- **Figures** are native TikZ. Each diagram is a `figures/fig_*.tex`
+  file holding one `tikzpicture`; the chapter includes it with
+  `\nexustikzfigure{label}{caption}{file}`. The LaTeX/PDF build renders
+  the TikZ directly; `render_figures.sh` rasterises each figure to a PNG
+  so the pandoc/Word build can embed it (the PNGs are build artefacts,
+  not committed). `tikz-setup.tex` holds the shared colour palette and
+  styles. The legacy `\nexusfigure` placeholder macro is retained but
+  superseded.
 - **Cross-references** are written as plain `Figure~\ref{...}`,
   `Section~\ref{...}`, `Table~\ref{...}` (no `cleveref`/`autoref`), so
   they survive the pandoc conversion to Word.

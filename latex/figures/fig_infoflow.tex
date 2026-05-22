@@ -1,0 +1,56 @@
+% Figure: information flow and privacy boundaries of a coordination event.
+\begin{tikzpicture}[nx,
+  src/.style={draw=nxBlue,thick,rounded corners=3pt,fill=nxBlueBg,
+              align=center,font=\sffamily\footnotesize,
+              minimum width=2.7cm,minimum height=0.95cm},
+  proc/.style={draw=nxGray,thick,rounded corners=3pt,fill=nxGrayBg,
+               align=center,font=\sffamily\footnotesize,
+               minimum width=3.0cm,minimum height=1.2cm},
+  ann/.style={draw=nxBlue,thick,rounded corners=3pt,fill=white,
+              align=center,font=\sffamily\footnotesize,
+              minimum width=3.0cm,minimum height=1.7cm},
+  agt/.style={draw=nxGreen,thick,rounded corners=3pt,fill=nxGreenBg,
+              align=center,font=\sffamily\scriptsize,
+              minimum width=2.5cm,minimum height=0.9cm},
+  arr/.style={-{Latex[length=2.4mm]},thick},
+]
+  % ---- column headings ----
+  \node[font=\sffamily\small\bfseries,nxBlue]  at (-6.4,3.4) {Information sources};
+  \node[font=\sffamily\small\bfseries,nxGray]  at (-1.7,3.4) {Event detection};
+  \node[font=\sffamily\small\bfseries,nxGreen] at ( 4.6,3.4) {Information consumers};
+
+  % ---- sources (left) ----
+  \node[src] (m) at (-6.4, 2.1) {Machine state\\\nxsmall health, breakdowns};
+  \node[src] (j) at (-6.4, 0.6) {Job state\\\nxsmall progress, due dates};
+  \node[src] (r) at (-6.4,-0.9) {Resource state\\\nxsmall crew, suppliers};
+
+  % ---- detection (centre) ----
+  \node[proc] (det) at (-1.7,1.5)
+       {Classify conflict type\\\nxsmall maintenance / quality / supply};
+  \node[ann] (ann) at (-1.7,-1.0)
+       {\textbf{Conflict}\\\textbf{announcement}\\[2pt]
+        \nxsmall type, machine id,\\\nxsmall shared signals only};
+
+  % ---- consumers (right): privacy zone with the four agents ----
+  \node[agt] (a1) at (4.6, 2.05) {PSA --- production view};
+  \node[agt] (a2) at (4.6, 0.95) {PMA --- maintenance view};
+  \node[agt] (a3) at (4.6,-0.15) {QCA --- quality view};
+  \node[agt] (a4) at (4.6,-1.25) {SCA --- supply view};
+  \node[draw=nxGreen,thick,dashed,rounded corners=6pt,
+        fit=(a1)(a4),inner sep=8pt] (zone) {};
+  \node[nxsmall,nxGreen,align=center,anchor=north] at (4.6,-2.2)
+       {\emph{privacy boundary} --- each agent reads the shared\\
+        signals \emph{plus only its own} ISA-95 domain state};
+
+  \node[proc,draw=nxRed,fill=nxRedBg,minimum height=1.0cm] (med) at (4.6,-4.0)
+       {Mediator\\\nxsmall sees only the published bids};
+
+  % ---- flows ----
+  \draw[arr,nxBlue] (m) -| (det);
+  \draw[arr,nxBlue] (j) -- (det);
+  \draw[arr,nxBlue] (r) -| (det);
+  \draw[arr,nxGray] (det) -- (ann);
+  \draw[arr,nxBlue] (ann.east) -- node[above,nxsmall,nxBlue]{broadcast} (zone.west);
+  \draw[arr,nxGreen] (zone.east) to[out=0,in=0,looseness=1.6]
+        node[right,nxsmall,nxGreen,pos=0.5]{bid summaries} (med.east);
+\end{tikzpicture}

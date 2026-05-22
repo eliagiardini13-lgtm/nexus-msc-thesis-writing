@@ -1,0 +1,42 @@
+% Figure: internal BDI structure of a Worker agent (PMA shown as example).
+\begin{tikzpicture}[nx,
+  mind/.style={draw=nxGreen,thick,rounded corners=3pt,fill=nxGreenBg,
+               align=center,font=\sffamily\footnotesize,
+               minimum width=2.7cm,minimum height=1.15cm},
+  stage/.style={draw=nxBlue,thick,rounded corners=3pt,fill=nxBlueBg,
+                align=center,font=\sffamily\footnotesize,
+                minimum width=2.5cm,minimum height=1.15cm},
+  io/.style={draw,thick,rounded corners=2pt,fill=white,
+             align=center,font=\sffamily\footnotesize},
+  flow/.style={-{Latex[length=2.4mm]},thick},
+]
+  % ---- private mental state (top row) ----
+  \node[mind] (bel) at (-2.0,3.0) {\textbf{Beliefs}\\\nxsmall machine health,\\\nxsmall time since service};
+  \node[mind] (des) at ( 1.6,3.0) {\textbf{Desires}\\\nxsmall weighted domain\\\nxsmall objectives};
+  % ---- deliberation pipeline (bottom row) ----
+  \node[stage] (upd) at (-3.7,0.4) {update\\beliefs};
+  \node[stage] (der) at (-0.5,0.4) {derive\\constraints};
+  \node[stage] (gen) at ( 2.7,0.4) {generate\\bids};
+
+  % ---- agent boundary ----
+  \node[draw=nxGreen,thick,dashed,rounded corners=6pt,
+        fit=(bel)(des)(upd)(gen),inner sep=14pt,
+        label={[nxGreen,align=center,font=\sffamily\small]above:{%
+          \textbf{PMA --- Preventive Maintenance Agent}\\[1pt]
+          \footnotesize\itshape beliefs and desires are private --- never disclosed}}] (box) {};
+
+  % ---- intentions = bids (caption inside) ----
+  \node[nxsmall,nxBlue] at (2.7,1.45) {intentions $\Rightarrow$ bids};
+
+  % ---- I/O ----
+  \node[io,draw=nxRed] (in) at (-7.0,0.4) {Conflict\\announcement};
+  \node[io,draw=nxRed] (out) at (7.0,0.4) {Bid set\\\nxsmall (utility, region)};
+
+  % ---- flows ----
+  \draw[flow,nxRed] (in.east) -- (box.west|-upd);
+  \draw[flow,nxBlue] (upd) -- (der);
+  \draw[flow,nxBlue] (der) -- (gen);
+  \draw[flow,nxGreen] (bel.south) -- ([yshift=2pt]der.north-|bel.south);
+  \draw[flow,nxGreen] (des.south) -- ([yshift=2pt]gen.north-|des.south);
+  \draw[flow,nxRed] (box.east|-gen) -- (out.west);
+\end{tikzpicture}
