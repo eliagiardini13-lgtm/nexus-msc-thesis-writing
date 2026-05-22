@@ -5,6 +5,51 @@ WHAT changed, WHY, and WHERE.
 
 ---
 
+## 2026-05-22 — Chapter 3 figure resizing + bibliography updates
+
+**WHAT.** Resized the Chapter 3 TikZ figures so they fill the text
+width consistently; added 8 references to `nexus.bib`; activated the
+Hart 1968 A* citation.
+
+**WHY.** Two figures rendered over-wide (≈19 cm) and were shrunk by the
+old `max width` fit, making their text small; others under-filled the
+column. The bibliography needed the DD-V5-022/023 industrial-benchmark
+references.
+
+**WHERE.**
+- `latex/preamble.tex` — `\nexustikzfigure` now scales every figure to
+  `width=\linewidth` (was `max width`), so narrow figures enlarge and
+  all figures fill the column uniformly.
+- `latex/figures/fig_arch_fence.tex` — tier text rewrapped with a fixed
+  `text width`; natural width 19.4 cm → 16.5 cm (no more shrink).
+- `latex/figures/fig_infoflow.tex` — the bid-summaries arrow no longer
+  loops far right; the privacy note moved to the bottom-left with a
+  dotted leader; natural width 18.7 cm → 16.0 cm.
+- `latex/chapters/03_architecture.tex` — A* attribution now cites
+  `\cite{hart1968astar}` (the key is present in `nexus.bib`); the
+  earlier TODO comment removed. No prose content changed.
+- `../Bibliography/nexus.bib` — 8 entries added (see the Bibliography
+  repo changelog / commit); 103 → 111 entries.
+
+**Build status.** LaTeX clean (42 pages, 0 undefined citations,
+0 biber errors, 2 negligible overfull hboxes). Word regenerated:
+`word/03_architecture.docx`, 8 figures embedded.
+
+**Note on the bibliography.** Of the 8 new entries, 5 are web-verified
+(Lei 2022, Han 2021, Azzouz 2017, Wang & Yu 2010, Wang et al. 2020
+NSGA-III). 3 could not be located in Crossref / Google Scholar and are
+added as `@misc` entries flagged `[UNVERIFIED]` with `TODO` markers:
+`nguyen2014maintenancebudget`, `brunetti2016tardiness`,
+`forrester2008demand` — confirm or replace before citing. The
+`wang2020nsga3fjsp` entry uses a verified Wang et al. (Leiden) paper;
+DD-V5-021 had cited the authors as "Wang, M. & Pan, X.", which could
+not be verified. The 5 pre-existing entries flagged for a metadata
+check (kirkpatrick2017, trentesaux2009, taillard1993,
+agarwal2021precipice, brandimarte1993) were verified correct as-is ---
+no changes were needed.
+
+---
+
 ## 2026-05-22 — Chapter 3: TikZ figures + fixes + polish
 
 **WHAT.** Replaced the 5 figure placeholders with native TikZ diagrams,

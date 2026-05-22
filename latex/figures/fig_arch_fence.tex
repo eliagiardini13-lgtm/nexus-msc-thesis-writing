@@ -3,35 +3,38 @@
   io/.style={draw,thick,rounded corners=3pt,align=center,
              font=\sffamily\footnotesize,minimum height=1.0cm},
   tier/.style={draw,thick,rounded corners=3pt,align=left,
-               font=\sffamily\footnotesize,minimum width=8.7cm,
-               minimum height=1.45cm,inner sep=6pt},
+               font=\sffamily\footnotesize,text width=8.0cm,
+               minimum width=8.4cm,minimum height=1.75cm,inner sep=6pt},
   badge/.style={draw,thick,rounded corners=3pt,align=center,
                 font=\sffamily\footnotesize\bfseries,
-                minimum width=2.1cm,minimum height=1.45cm},
-  arr/.style={-{Latex[length=2.4mm]},thick},
+                minimum width=2.0cm,minimum height=1.75cm},
+  arr/.style={-{Latex[length=2.6mm]},thick},
 ]
   % ---- input + classifier ----
-  \node[io,draw=nxGray,fill=white,minimum width=2.2cm] (con) at (-7.2,0) {Resolved\\contract};
-  \node[io,draw=nxBlue,fill=nxBlueBg,minimum width=2.3cm,minimum height=4.6cm]
-        (cls) at (-4.4,0) {Evaluate\\every\\safety\\rule};
+  \node[io,draw=nxGray,fill=white,minimum width=2.0cm] (con) at (-6.9,0)
+        {Resolved\\contract};
+  \node[io,draw=nxBlue,fill=nxBlueBg,minimum width=2.3cm,minimum height=5.8cm]
+        (cls) at (-4.5,0) {Evaluate\\every\\safety\\rule};
   \draw[arr,nxGray] (con) -- (cls);
 
   % ---- three tiers ----
-  \node[badge,fill=nxRedBg,draw=nxRed,text=nxRed]      (bcrit) at (-1.0, 2.05) {$\sigma_2$\\Critical};
-  \node[badge,fill=nxYellowBg,draw=nxYellow,text=nxYellow](bwarn) at (-1.0, 0.0) {$\sigma_1$\\Warning};
-  \node[badge,fill=nxGreenBg,draw=nxGreen,text=nxGreen] (bnorm) at (-1.0,-2.05) {$\sigma_0$\\Normal};
+  \node[badge,fill=nxRedBg,draw=nxRed,text=nxRed]        (bcrit) at (-1.6, 2.0)  {$\sigma_2$\\Critical};
+  \node[badge,fill=nxYellowBg,draw=nxYellow,text=nxYellow](bwarn) at (-1.6, 0.0)  {$\sigma_1$\\Warning};
+  \node[badge,fill=nxGreenBg,draw=nxGreen,text=nxGreen]  (bnorm) at (-1.6,-2.0)  {$\sigma_0$\\Normal};
 
-  \node[tier,fill=nxRedBg,draw=nxRed,anchor=west] (tcrit) at (0.15,2.05)
-       {\textbf{Hard violation} of a safety rule (or negotiation failure).\\
-        \emph{Now:} logged + flagged for audit. \quad
-        \emph{Future:} runtime rejection / re-negotiation.};
-  \node[tier,fill=nxYellowBg,draw=nxYellow,anchor=west] (twarn) at (0.15,0.0)
-       {\textbf{Boundary approach} --- within 10\,\% of a safety limit.\\
-        \emph{Now:} logged + flagged. \quad
-        \emph{Future:} runtime alert.};
-  \node[tier,fill=nxGreenBg,draw=nxGreen,anchor=west] (tnorm) at (0.15,-2.05)
-       {\textbf{Safe} --- no rule violated, none at boundary.\\
-        \emph{Now:} logged. \quad \emph{Future:} logged.};
+  \node[tier,fill=nxRedBg,draw=nxRed,anchor=west] (tcrit) at (-0.45,2.0)
+       {\textbf{Hard violation} of a safety rule, or a negotiation
+        failure.\\
+        \emph{Now} --- logged and flagged for audit.\\
+        \emph{Future} --- runtime rejection or re-negotiation.};
+  \node[tier,fill=nxYellowBg,draw=nxYellow,anchor=west] (twarn) at (-0.45,0.0)
+       {\textbf{Boundary approach} --- a rule is within 10\,\% of its
+        safety limit.\\
+        \emph{Now} --- logged and flagged for audit.\\
+        \emph{Future} --- runtime alert.};
+  \node[tier,fill=nxGreenBg,draw=nxGreen,anchor=west] (tnorm) at (-0.45,-2.0)
+       {\textbf{Safe} --- no rule violated, and none at its boundary.\\
+        \emph{Now} and \emph{Future} --- logged only.};
 
   % ---- classifier to tiers ----
   \draw[arr,nxRed]    (cls.east|-bcrit) -- (bcrit.west);
@@ -39,6 +42,7 @@
   \draw[arr,nxGreen]  (cls.east|-bnorm) -- (bnorm.west);
 
   % ---- log-only banner ----
-  \node[font=\sffamily\footnotesize\itshape,nxGray] at (0.3,-3.35)
-       {Fence is log-only within the scope of this thesis; active runtime enforcement is future work (Chapter 7).};
+  \node[font=\sffamily\footnotesize\itshape,nxGray,align=center] at (-0.2,-3.55)
+       {Fence is log-only within the scope of this thesis;\\
+        active runtime enforcement is future work (Chapter~7).};
 \end{tikzpicture}

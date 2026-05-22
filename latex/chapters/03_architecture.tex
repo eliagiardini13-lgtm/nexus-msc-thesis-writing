@@ -792,9 +792,8 @@ each not-yet-chosen agent, the largest utility any of its bids could
 contribute. Because branch-cutting can only ever \emph{remove}
 feasible completions, $h(p)$ never underestimates the true utility
 reachable from $p$: it is an \emph{admissible} heuristic in the sense of
-% TODO: replace the prose attribution below with \cite{hart1968astar}
-% once Hart, Nilsson \& Raphael (1968) is added to nexus.bib.
-the A* algorithm of Hart, Nilsson and Raphael. Expanding the queue in
+the A* algorithm of Hart, Nilsson and Raphael~\cite{hart1968astar}.
+Expanding the queue in
 decreasing order of $f$ is therefore A* search on a maximisation
 problem, and the standard A* optimality argument applies: \emph{the
 first complete combination the search returns is a global maximiser of
