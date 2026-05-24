@@ -5,6 +5,30 @@ WHAT changed, WHY, and WHERE.
 
 ---
 
+## 2026-05-23 — Chapter 3 test-count reconciliation; A* citation verified
+
+**WHAT.** Reconciled the Chapter 3 test-count discrepancy flagged by the
+[THESIS_STATUS_AUDIT](../THESIS_STATUS_AUDIT.md) (Chapter 3 cited "245",
+repo carries 307 across 26 files). Verified that the
+Hart-Nilsson-Raphael (1968) A* bibentry is already in `nexus.bib`
+(`@article{hart1968astar, …}`, IEEE Trans. SSC 4(2), 100–107) and that
+`\cite{hart1968astar}` is in place in §3.4.4 — both added in the
+2026-05-22 batch; the audit-listed open item was stale.
+
+**WHY.** Trivial accuracy fix: the suite grew (DD-V5-019 synthetic v2
+agents/env/generator + DD-V5-022 industrial automotive + DD-V5-023
+extensions + DD-V5-025 industrial v2 added ~62 tests after the
+Chapter 3 first draft fixed the count at 245). Audit-listed open
+items both resolved.
+
+**WHERE.**
+- `latex/chapters/03_architecture.tex` (§3.8) — "$245$ tests" →
+  "$307$ tests across $26$ files".
+- `../Bibliography/nexus.bib` — no change required; `hart1968astar`
+  already present at line 1022, cited from §3.4.4 line 795.
+
+---
+
 ## 2026-05-22 — Chapter 3 figure resizing + bibliography updates
 
 **WHAT.** Resized the Chapter 3 TikZ figures so they fill the text
