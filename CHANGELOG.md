@@ -5,6 +5,37 @@ WHAT changed, WHY, and WHERE.
 
 ---
 
+## 2026-05-26 — Test-count reconciliation across Chapters 3 and 4 (generic formulation)
+
+**WHAT.** Replaced all specific test-count numbers in Chapters 3 and 4
+with a future-proof generic formulation ("~$350$ tests at the time of
+writing"). Affected citations:
+- Ch.3 §3.8 (line 1396): "$307$ tests across $26$ files" → "approximately
+  $350$ tests at the time of writing".
+- Ch.4 §4 Testing Strategy (line 1142): "$350$ tests ($349$ PASS, $1$
+  SKIP)" → "approximately $350$ tests at the time of writing".
+- Ch.4 (line 1162): "350-test budget" → "test budget".
+- Ch.4 chapter close (line 1254): "test suite of $350$ tests" → "test
+  suite (~$350$ tests at the time of writing; ...)".
+
+**WHY.** Pre-existing inconsistency across the manuscript: Chapter 3
+cited "307 tests" (snapshot at 2026-05-23), Chapter 4 cited "350 tests"
+(snapshot at Chapter 4 drafting on 2026-05-26), code repo HEAD is
+$349$ PASS + $1$ SKIP. Three different numbers for the same artifact
+across two chapters and the code state. Resolution chosen: stop
+re-counting in prose entirely. The suite continues to grow as Chapter 5
+validation work proceeds, so any hard number will go stale again
+within weeks. Generic formulation defers to `DESIGN_DECISIONS.md` and
+the `pytest` output as the single source of truth.
+
+**WHERE.**
+- `latex/chapters/03_architecture.tex` line 1396.
+- `latex/chapters/04_implementation.tex` lines 1142, 1162, 1254.
+- LaTeX recompiled cleanly: 68 pages, 0 errors, 0 warnings, 0
+  undefined references.
+
+---
+
 ## 2026-05-23 — Chapter 3 test-count reconciliation; A* citation verified
 
 **WHAT.** Reconciled the Chapter 3 test-count discrepancy flagged by the
