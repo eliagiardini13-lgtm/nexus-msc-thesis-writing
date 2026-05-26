@@ -1,0 +1,65 @@
+% Figure: Worker class hierarchy + bid generation pipeline.
+\begin{tikzpicture}[nx,
+  cls/.style={draw,thick,rounded corners=3pt,fill=white,align=center,
+              font=\sffamily\footnotesize,
+              minimum width=2.4cm,minimum height=0.85cm,inner sep=3pt},
+  abs/.style={cls,draw=nxGreen,fill=nxGreenBg,font=\sffamily\footnotesize\itshape},
+  conc/.style={cls,draw=nxGreen,fill=white},
+  sub/.style={cls,draw=nxGray,fill=nxGrayBg,minimum width=2.3cm},
+  stg/.style={draw,thick,rounded corners=3pt,fill=nxBlueBg,
+              draw=nxBlue,align=center,font=\sffamily\footnotesize,
+              minimum width=2.4cm,minimum height=0.85cm},
+  io/.style={draw,thick,rounded corners=2pt,fill=white,align=center,
+             font=\sffamily\footnotesize,minimum height=0.85cm},
+  inh/.style={-{Latex[length=2.4mm,open]},thick,nxGreen},
+  flw/.style={-{Latex[length=2.4mm]},thick,nxBlue},
+]
+  % ---- abstract base ----
+  \node[abs] (av5) at (0,3.4) {AgentV5\\\nxsmall (abstract)};
+
+  % ---- four home agents ----
+  \node[conc] (psa) at (-4.8,1.9) {PSAAgent};
+  \node[conc] (pma) at (-1.6,1.9) {PMAAgent};
+  \node[conc] (qca) at ( 1.6,1.9) {QCAAgent};
+  \node[conc] (sca) at ( 4.8,1.9) {SCAAgent};
+
+  % ---- synthetic_v2 subclasses (DD-017) ----
+  \node[sub] (spsa) at (-4.8,0.5) {\nxsmall SyntheticPSAv2};
+  \node[sub] (spma) at (-1.6,0.5) {\nxsmall SyntheticPMAv2};
+  \node[sub] (sqca) at ( 1.6,0.5) {\nxsmall SyntheticQCAv2};
+  \node[sub] (ssca) at ( 4.8,0.5) {\nxsmall SyntheticSCAv2};
+
+  % ---- inheritance arrows (open triangle from child to parent) ----
+  \draw[inh] (psa) -- (av5); \draw[inh] (pma) -- (av5);
+  \draw[inh] (qca) -- (av5); \draw[inh] (sca) -- (av5);
+  \draw[inh,nxGray] (spsa) -- (psa); \draw[inh,nxGray] (spma) -- (pma);
+  \draw[inh,nxGray] (sqca) -- (qca); \draw[inh,nxGray] (ssca) -- (sca);
+
+  % ---- annotation ----
+  \node[font=\sffamily\scriptsize\itshape,nxGray,right]
+        at (5.5,0.5) {DD-017};
+
+  % ---- bid-generation pipeline (bottom row) ----
+  \node[io,draw=nxRed,minimum width=2.3cm]   (in) at (-6.8,-2.2) {Conflict\\announcement};
+  \node[stg] (s1) at (-3.6,-2.2) {Sample};
+  \node[stg] (s2) at (-1.0,-2.2) {Adjust};
+  \node[stg] (s3) at ( 1.6,-2.2) {Bid};
+  \node[stg] (s4) at ( 4.2,-2.2) {Submit};
+  \node[io,draw=nxRed,minimum width=2.0cm]   (out) at (7.0,-2.2) {Bid set};
+
+  \draw[flw,nxRed]  (in)  -- (s1);
+  \draw[flw] (s1) -- (s2); \draw[flw] (s2) -- (s3); \draw[flw] (s3) -- (s4);
+  \draw[flw,nxRed]  (s4)  -- (out);
+
+  % ---- labels ----
+  \node[font=\sffamily\scriptsize\itshape,nxBlue,below=2pt of s1] {SN candidates};
+  \node[font=\sffamily\scriptsize\itshape,nxBlue,below=2pt of s2] {greedy hill-climb};
+  \node[font=\sffamily\scriptsize\itshape,nxBlue,below=2pt of s3] {top-$n$ region};
+  \node[font=\sffamily\scriptsize\itshape,nxBlue,below=2pt of s4] {to BidBus};
+
+  % ---- captions in the figure ----
+  \node[font=\sffamily\small\bfseries,nxGreen,anchor=west] at (-7.0,4.0)
+        {Class hierarchy};
+  \node[font=\sffamily\small\bfseries,nxBlue,anchor=west]  at (-7.0,-1.3)
+        {Bid-generation pipeline (Ito 2007 \S 3)};
+\end{tikzpicture}

@@ -29,6 +29,16 @@
 \providecommand{\nxsmall}{}
 \renewcommand{\nxsmall}{\normalfont\sffamily\scriptsize}
 
+% --- Agent / system shortcuts, so figures can use \NEXUS{} etc. ---
+%     (the same macros are also defined in preamble.tex for prose use;
+%      \providecommand makes the standalone-render wrapper self-sufficient
+%      without clashing with the chapter build, which loads tikz-setup first).
+\providecommand{\NEXUS}{NEXUS}
+\providecommand{\PSA}{PSA}
+\providecommand{\PMA}{PMA}
+\providecommand{\QCA}{QCA}
+\providecommand{\SCA}{SCA}
+
 % --- Shared styles ---
 \tikzset{
   nx/.style={font=\sffamily},

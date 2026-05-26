@@ -1,0 +1,42 @@
+% Figure: audit-stream topology — Contract Record + explicit-failure log → Fence.
+\begin{tikzpicture}[nx,
+  box/.style={draw,thick,rounded corners=3pt,align=center,
+              font=\sffamily\footnotesize,
+              minimum width=3.2cm,minimum height=1.05cm,inner sep=4pt},
+  log/.style={draw,thick,rounded corners=2pt,fill=white,
+              font=\sffamily\footnotesize\ttfamily,align=left,
+              minimum width=3.6cm,minimum height=1.6cm,inner sep=5pt},
+  arr/.style={-{Latex[length=2.4mm]},thick},
+]
+  % ---- producers (left) ----
+  \node[box,fill=nxRedBg,draw=nxRed]
+        (mkt) at (-5.0, 1.4) {Marketplace\\(\NEXUS{}, Siloed, RBC)};
+  \node[box,fill=nxBlueBg,draw=nxBlue]
+        (env) at (-5.0,-1.4) {Environment\\\nxsmall (resource capacity check)};
+
+  % ---- audit streams (centre) ----
+  \node[log,draw=nxRed]
+        (cr) at (-0.4, 1.4) {ContractRecord\\entries\\\nxsmall (one per event)};
+  \node[log,draw=nxBlue]
+        (ef) at (-0.4,-1.4) {env.\_env\_\\failure\_log\\\nxsmall (DD-026)};
+
+  % ---- classifier ----
+  \node[box,fill=nxOrangeBg,draw=nxOrange,minimum width=3.0cm,minimum height=2.6cm]
+        (cls) at (4.5,0.0) {Fence\\classifier\\\nxsmall (4 rules,\\$\sigma_0{/}\sigma_1{/}\sigma_2$)};
+
+  % ---- output ----
+  \node[box,fill=white,draw=nxOrange,minimum width=3.0cm]
+        (fr) at (4.5,-2.7) {FenceRecord\\stream};
+
+  % ---- flows ----
+  \draw[arr,nxRed]    (mkt) -- node[above,nxsmall,nxRed]{append} (cr);
+  \draw[arr,nxBlue]   (env) -- node[above,nxsmall,nxBlue]{append} (ef);
+  \draw[arr,nxRed]    (cr) -- node[above,nxsmall,nxRed]{read} (cls.west|-cr);
+  \draw[arr,nxBlue]   (ef) -- node[above,nxsmall,nxBlue]{read} (cls.west|-ef);
+  \draw[arr,nxOrange] (cls) -- node[right,nxsmall,nxOrange]{classify} (fr);
+
+  % ---- annotation ----
+  \node[font=\sffamily\scriptsize\itshape,nxGray,align=center]
+        at (-0.4,-3.0) {two independent append-only logs;\\
+                         Fence reads both, never writes back};
+\end{tikzpicture}

@@ -1,12 +1,1255 @@
 % ============================================================
 %  Chapter 4 — Implementation
-%  STATUS: stub. Scheduled for drafting in Week 8.
+%  STATUS: first draft (2026-05-26).
+%  Source: nexus-mvv-v5/ source tree (src/, tests/, experiments/),
+%  DESIGN_DECISIONS.md (DD-V5-001 .. DD-V5-034), and THESIS_STATE.md.
+%  Convention: implementation decisions are cited as DD-NNN; the
+%  full repository identifiers are DD-V5-NNN (the "V5-" prefix is
+%  the codebase line and is omitted in thesis prose).
 % ============================================================
 \chapter{Implementation}
 \label{ch:implementation}
 
-\textit{This chapter is a placeholder. Planned coverage: the codebase
-walkthrough, the mediator search algorithm (branch-cut breadth-first
-search with an admissible heuristic), multi-mechanism support
-(Mediator, Cascade, Contract Net, Rule-Based Coordination), the
-test suite, and reproducibility infrastructure.}
+% ------------------------------------------------------------
+\section{Overview}
+\label{sec:impl-overview}
+
+Chapter~\ref{ch:architecture} described \NEXUS{} as a four-layer
+reference architecture --- four BDI Worker agents, a multi-issue
+Marketplace mediator, a three-tier Fence audit layer, and a deferred
+School layer for continual adaptation --- and laid out the
+information-flow and bounded-disclosure properties the composition is
+designed to deliver. This chapter turns from architecture to
+\emph{implementation}: it documents the runnable software system that
+realises the architecture, names the design decisions taken in code,
+and gives the engineering substrate against which the empirical
+characterisation of Chapter~\ref{ch:results} is performed.
+
+The chapter is deliberately narrow. It is not a literature review ---
+those discussions belong in Chapter~\ref{ch:literature} --- and it is
+not a defence of the architectural choices, which Chapter~\ref{ch:architecture}
+already covered. Its task is to show \emph{how} the architecture is
+realised: which packages exist, what each one is responsible for, which
+implementation decisions are non-obvious and why, and what evidence
+exists that the implementation behaves as claimed. Where a decision is
+documented in the repository's append-only design-decision ledger, the
+chapter cites it as \texttt{DD-NNN}; a reader who wants the full
+rationale can read the corresponding entry in \texttt{DESIGN\_DECISIONS.md}.
+
+\subsection{Codebase organisation}
+\label{subsec:impl-codebase}
+
+The implementation is a single Python package, \texttt{src/}, of about
+five thousand lines and three thousand lines of automated tests. Its
+package layout maps one-to-one onto the four-layer decomposition of
+Chapter~\ref{ch:architecture}: each architectural layer occupies one
+top-level subpackage, and the shared data structures live in a fifth
+\texttt{core/} package that no layer is allowed to bypass.
+Figure~\ref{fig:impl-package-map} shows the mapping.
+
+\nexustikzfigure{fig:impl-package-map}{Mapping from \NEXUS{} source
+packages to the four architectural layers of
+Chapter~\ref{ch:architecture}. Each layer is implemented by exactly one
+subpackage; the \texttt{core/} package holds the data structures that
+cross layer boundaries; the \texttt{environment/} package provides the
+discrete-event simulation against which the architecture is evaluated.}{fig_impl_packages}
+
+Table~\ref{tab:impl-packages} records the package-to-layer mapping in
+text. The correspondence is not merely presentational: it is enforced
+by the import graph. The \texttt{marketplace/} package imports
+\texttt{agents.base.AgentV5} (the Worker abstract class) only as a type
+hint and never reaches into agent internals; the \texttt{fence/}
+package imports only the audit-log data structures of
+\texttt{marketplace.contract\_record} and never the mediator or the
+agents; the \texttt{baselines/} package implements alternative
+mechanisms that are drop-in replacements for the Marketplace facade.
+This discipline makes the layer boundaries falsifiable: a layer that
+imported across the boundary would fail an architectural test
+(Section~\ref{sec:impl-testing}).
+
+\begin{table}[ht]
+\centering
+\caption{Source packages and the architectural layer each one realises.}
+\label{tab:impl-packages}
+\small
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Package} & \textbf{Layer} & \textbf{Responsibility} \\
+\midrule
+\texttt{src/core/}        & cross-layer
+                          & Composite contract, weighted constraint,
+                            bid summary (Ito 2007 §2 data structures). \\
+\addlinespace
+\texttt{src/agents/}      & Worker
+                          & BDI agent base class plus four home agents
+                            (\PSA{}, \PMA{}, \QCA{}, \SCA{}); benchmark-specific
+                            agent subclasses. \\
+\addlinespace
+\texttt{src/marketplace/} & Marketplace
+                          & Marketplace facade (orchestrator), bid bus,
+                            mediator (branch-cut A*), contract record. \\
+\addlinespace
+\texttt{src/fence/}       & Fence
+                          & Three-tier classifier, pre-declared safety
+                            rules, audit-record stream. \\
+\addlinespace
+\texttt{src/baselines/}   & Marketplace (alternatives)
+                          & Siloed, Rule-Based Coordination, Sequential
+                            cascade, Contract Net, and the post-hoc
+                            CUSO centralised baseline. \\
+\addlinespace
+\texttt{src/environment/} & simulation substrate
+                          & Discrete-event plant model (SimPy);
+                            Weibull degradation, defect sigmoid,
+                            resource-capacity model. \\
+\addlinespace
+\texttt{src/benchmarks/}  & simulation substrate
+                          & Brandimarte FJSP parser; synthetic-v1 and
+                            synthetic-v2 generators; industrial
+                            automotive generator (Chapter~\ref{ch:industrial}). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Dependencies}
+
+The runtime dependencies are deliberately minimal. \texttt{numpy} and
+\texttt{simpy} provide the numerical and discrete-event-simulation
+substrates; \texttt{pytest} drives the automated regression suite.
+Nothing else is on the runtime path. There is no machine-learning
+framework, no constraint-solver package, and no negotiation library:
+the mediator's branch-cut A* (Section~\ref{sec:impl-marketplace}) and
+the agents' constraint derivation are written from scratch against the
+data structures of \texttt{core/}. This is a deliberate decision and is
+recorded in \texttt{DD-006}: the Ito \cite{ito2007multiissue} protocol
+admits a clean direct implementation at the scale of the problem (four
+agents, a 108-contract joint space), and a hand-written implementation
+keeps the architectural claims of Chapter~\ref{ch:architecture}
+verifiable against the code without an opaque library in between.
+
+\subsection{Determinism and reproducibility}
+
+A \NEXUS{} coordination event is \emph{deterministic} given a fixed
+random-number-generator seed. The agent-side sampling that produces
+bids is keyed by a stable hash of \texttt{(agent\_id, conflict\_id,
+seed)} rather than by a process-dependent global RNG, which is how the
+implementation achieves cross-process reproducibility: the same
+experiment configuration on two different machines produces byte-identical
+audit logs. The implementation defaults to deterministic greedy search
+inside the bid-generation pipeline, having found in calibration that the
+simulated-annealing alternative makes no measurable difference at the
+scale of the joint contract space (\texttt{DD-008}). Determinism is the
+property that makes the test suite of Section~\ref{sec:impl-testing}
+operate by byte-for-byte regression rather than by statistical
+inspection.
+
+The remainder of the chapter walks through the layers in the order they
+participate in a coordination event: the Worker layer in
+Section~\ref{sec:impl-workers}; the Marketplace layer in
+Section~\ref{sec:impl-marketplace}; the Fence layer in
+Section~\ref{sec:impl-fence}; the alternative-mechanism baselines in
+Section~\ref{sec:impl-baselines}; the benchmark instances in
+Section~\ref{sec:impl-benchmarks}; the simulation framework in
+Section~\ref{sec:impl-simframework}; and the testing strategy in
+Section~\ref{sec:impl-testing}.
+
+% ------------------------------------------------------------
+\section{The Worker Layer}
+\label{sec:impl-workers}
+
+The Worker layer is the implementation of the four BDI agents of
+Section~\ref{sec:arch-worker}. It lives in \texttt{src/agents/} and is
+organised around a single abstract base class, \texttt{AgentV5}, that
+encapsulates the parts of the BDI deliberation pipeline that are
+\emph{identical} for every agent --- belief storage, the bid-generation
+protocol, the cross-domain-damping discipline --- and leaves the parts
+that are \emph{specific} to each agent --- belief update and constraint
+derivation --- as abstract methods.
+
+\subsection{The abstract agent}
+\label{subsec:impl-agentbase}
+
+\texttt{AgentV5} (in \texttt{src/agents/base.py}, about 450 lines) is the
+sole interface the Marketplace layer sees. It exposes a small public
+surface:
+
+\begin{lstlisting}[language=Python,caption={The public surface of the
+abstract agent.},label={lst:impl-agentv5}]
+class AgentV5:
+    agent_id: str
+    HOME_ISSUE: int                       # 0..3; one per agent
+    cross_domain_awareness: bool = True   # false for Siloed (DD-033)
+
+    def update_beliefs(self, obs):             # specialised per agent
+        ...
+
+    def derive_constraints(self, announcement):  # specialised per agent
+        ...                                      # returns list[Constraint]
+
+    def propose_bids(self, announcement,         # shared 4-step protocol
+                     top_n: int = 2,
+                     use_sa: bool = False,
+                     **kwargs) -> list[Bid]:
+        ...
+
+    def utility_for_contract(self, announcement,  # used by CUSO (Sec. 4.5)
+                             contract) -> float:
+        ...
+
+    def record_contract(self, announcement, contract):  # bookkeeping
+        ...
+\end{lstlisting}
+
+The abstract methods are exactly \texttt{update\_beliefs} and
+\texttt{derive\_constraints}: every other behaviour is shared, which is
+the practical realisation of the architectural claim that the protocol
+is uniform across the four agents. A new agent --- a fifth ISA-95
+function, or a benchmark-specific specialisation
+(Section~\ref{sec:impl-benchmarks}) --- inherits from \texttt{AgentV5},
+overrides the two abstract methods, and is interoperable with the
+Marketplace without further work.
+
+Figure~\ref{fig:impl-bdi-pipeline} shows the agent class hierarchy and
+the deliberation pipeline that turns a \texttt{ConflictAnnouncement}
+into a set of bids.
+
+\nexustikzfigure{fig:impl-bdi-pipeline}{The Worker-layer class
+hierarchy and the bid-generation pipeline. The four home agents
+(\PSA{}, \PMA{}, \QCA{}, \SCA{}) specialise the abstract \texttt{AgentV5}
+by overriding \texttt{update\_beliefs} and \texttt{derive\_constraints};
+benchmark-specific subclasses
+(Section~\ref{sec:impl-benchmarks}, \texttt{DD-017}) layer extra
+domain awareness on top.}{fig_impl_bdi}
+
+\subsection{Beliefs and desires}
+
+Each agent's beliefs are stored in a per-agent Python dictionary that
+the abstract class neither inspects nor schemas: any agent can store
+any beliefs, and the abstract pipeline never reaches in. \PMA{} stores
+machine-health histories and time since last service; \QCA{} stores
+defect-rate tallies and severity tracking; \SCA{} stores per-spare lead
+times; \PSA{} stores per-machine deferral counters. \texttt{update\_beliefs}
+is the method through which the environment delivers observations, and
+the per-agent implementation decides what to retain.
+
+The agent's desires are encoded in a small vector of calibrated weights
+that multiply the agent's constraint weights at derivation time. The
+weights inherit the v4 calibration verbatim where applicable; the
+threshold parameters \texttt{pm\_threshold} and
+\texttt{shortage\_lead\_threshold} were recalibrated in \texttt{DD-010}
+once the sensitivity sweep showed that the v4 defaults left \PMA{} and
+\SCA{} effectively dormant on the Brandimarte benchmark. The recalibrated
+values --- \texttt{pm\_threshold} $= 0.55$ and
+\texttt{shortage\_lead\_threshold} $= 24\,\text{h}$ --- bring the
+activation rate of each agent into the regime where the multi-issue
+mechanism is actually exercised.
+
+\subsection{Constraints and bids}
+\label{subsec:impl-constraints}
+
+The data structures of the Worker layer are exactly the Ito \cite{ito2007multiissue}
+§2 primitives, lifted into Python dataclasses in \texttt{src/core/}.
+
+A \texttt{Constraint} is a weighted predicate over the joint contract
+space. It is uniquely determined by a tuple of \emph{issue indices}
+$(i_1, \dots, i_k)$ with $k \in \{1, 2\}$ --- one for unary
+home-issue constraints, two for cross-domain constraints --- a
+frozenset of \emph{allowed} value combinations on those issues, and a
+non-negative \emph{weight}. At construction the constraint's
+\texttt{region} --- the set of contract indices that satisfy it --- is
+pre-computed once and cached as a frozen set, so the mediator's
+region-intersection search is a sequence of cheap set
+\textsc{and}'s rather than per-contract predicate evaluations.
+
+\begin{lstlisting}[language=Python,caption={The constraint dataclass
+(simplified; see \texttt{src/core/constraint.py}).},label={lst:impl-constraint}]
+@dataclass(frozen=True)
+class Constraint:
+    name:    str                      # human-readable, used in audit
+    issues:  Tuple[int, ...]          # unary (1) or binary (2)
+    allowed: FrozenSet[Tuple[int, ...]]  # allowed projections on `issues`
+    weight:  float                    # non-negative
+    region:  FrozenSet[int]           # pre-computed at construction
+
+    def is_satisfied(self, contract_indices) -> bool:
+        proj = tuple(contract_indices[i] for i in self.issues)
+        return proj in self.allowed
+\end{lstlisting}
+
+A \texttt{Bid} is the public, privacy-bearing summary of an agent's
+position on the current conflict. It is the tuple expected by the
+mediator: a scalar utility, the top-$n$ constraints whose intersection
+defines the bid region, and a sample contract inside the region from
+which the utility was measured.
+
+\begin{lstlisting}[language=Python,caption={The bid dataclass; the
+\texttt{region} method materialises the bid region by intersecting the
+top-$n$ constraint regions.},label={lst:impl-bid}]
+@dataclass(frozen=True)
+class Bid:
+    agent_id:       str
+    utility:        float                  # sum of weights of ALL
+                                            # satisfied constraints
+    constraint_set: Tuple[Constraint, ...] # top-n by weight
+    sample_contract: Tuple[int, ...]
+    top_n_used:     int
+
+    def region(self) -> FrozenSet[int]:
+        if not self.constraint_set: return frozenset(range(NUM_CONTRACTS))
+        r = self.constraint_set[0].region
+        for c in self.constraint_set[1:]:
+            r = r & c.region
+        return r
+\end{lstlisting}
+
+The asymmetry between the bid utility (sum of \emph{all} satisfied
+constraint weights) and the bid region (intersection of the
+\emph{top-$n$} constraint regions) is the soft-bid relaxation of Ito
+\cite{ito2007multiissue} §3 Step 3. Its calibration is documented in
+\texttt{DD-007}: \texttt{top\_n} is set to $2$ in the default
+\texttt{AgentV5} configuration, which captures the single most important
+inter-issue trade-off each agent holds while keeping the empirical
+negotiation-failure rate to about one per cent on the Brandimarte
+benchmark family. The rationale and the failure-rate-vs-expressiveness
+curve are reported in Chapter~\ref{ch:results}; the implementation
+treats \texttt{top\_n} as a parameter the calibration sweep can override
+via \texttt{propose\_kwargs}.
+
+\subsection{Bid generation}
+
+\texttt{AgentV5.propose\_bids} implements the four-step protocol of Ito
+\cite{ito2007multiissue} §3, shared by every agent:
+
+\begin{enumerate}[leftmargin=1.8em,itemsep=0.2em]
+  \item \textbf{Sample.} Draw \texttt{SN} candidate contracts from the
+    joint contract space; the agent-side RNG is seeded with a stable
+    hash of \texttt{(agent\_id, conflict\_id, global\_seed)} so the
+    samples are reproducible across processes.
+  \item \textbf{Adjust.} For each sampled contract, perform a local
+    search. The implementation defaults to greedy hill-climbing
+    (\texttt{use\_sa=False}, \texttt{DD-008}); a simulated-annealing
+    variant with a calibrated temperature schedule is retained as a
+    selectable option for sensitivity work but is not the default.
+  \item \textbf{Bid.} For each adjusted contract whose utility exceeds
+    a reservation threshold, build a \texttt{Bid}: utility is the sum
+    over \emph{all} satisfied constraint weights; region is the
+    intersection of the top-$n$ constraints; \texttt{sample\_contract}
+    records the contract at which utility was measured.
+  \item \textbf{Submit.} The agent returns the bid list to the
+    Marketplace, which publishes them to the \texttt{BidBus}. Bids
+    never leave the process before this step --- the constraint set
+    that produced them is discarded once the bids are formed.
+\end{enumerate}
+
+\subsection{Domain authority via home-issue weight ceilings}
+\label{subsec:impl-ceilings}
+
+The mono-dimensional authority discipline of
+Section~\ref{subsec:mono-dim} is implemented by giving each agent a
+ceiling on the weights of its home-issue constraints and damping the
+weights of its cross-domain constraints by a fixed factor. The
+calibrated ceilings are recorded in Table~\ref{tab:ceilings} of
+Chapter~\ref{ch:architecture} and are repeated in code as named
+constants in \texttt{src/agents/}\textit{agent}\texttt{.py}. The
+cross-domain damping factor is the same scalar applied across all four
+agents (about $0.20$ on the v4-inherited calibration, $0.30$ for
+\PSA{}'s cross-domain stake on quality and shortage events).
+
+The empirical consequence --- that the cross-domain damping factor is a
+low-sensitivity parameter on the benchmark family, because the
+order-of-magnitude separation between home-issue and damped-cross-issue
+weights makes it a tie-breaker rather than a decision driver --- is
+documented in \texttt{DD-009}. In code the discipline is expressed by
+keeping the per-agent home-issue weight ceiling and the cross-domain
+damper as named constants, never inline; calibration sweeps then
+override them via \texttt{AgentV5} subclass attributes.
+
+The discipline interacts with the \texttt{cross\_domain\_awareness}
+flag on \texttt{AgentV5}. By default the flag is \texttt{True} and the
+agent emits both home and (damped) cross-domain constraints; setting it
+to \texttt{False} causes \texttt{derive\_constraints} to drop every
+cross-domain constraint at emission, leaving the agent strictly
+home-domain. This flag is the implementation seam for the Siloed
+baseline of Section~\ref{sec:impl-baselines} (\texttt{DD-033}); inside
+\NEXUS{} proper the flag is \texttt{True} for all four agents.
+
+\subsection{The four home agents}
+
+Each home agent is a thin subclass of \texttt{AgentV5} that overrides
+\texttt{update\_beliefs} and \texttt{derive\_constraints}. The
+implementations live in \texttt{src/agents/}\{\texttt{psa}, \texttt{pma},
+\texttt{qca}, \texttt{sca}\}\texttt{.py}; each is about 200--300 lines and
+its core is a constraint-derivation function that takes a
+\texttt{ConflictAnnouncement} and the agent's beliefs and returns a
+list of \texttt{Constraint} instances. The constraint catalogue per
+agent is documented in detail in the repository's
+\texttt{docs/AGENT\_CONSTRAINT\_DERIVATION.md} note; this chapter cites
+it rather than reproducing it. The four catalogues share three
+disciplines:
+
+\begin{itemize}[leftmargin=1.4em,itemsep=0.2em]
+  \item \emph{Always-on baselines.} Each agent always emits at least
+    one constraint, so no agent ever submits an empty bid set on a
+    conflict it is asked to participate in. An empty bid set is a
+    negotiation failure (Section~\ref{sec:impl-marketplace}); the
+    always-on baselines turn that into a measurable rate rather than a
+    silent gap.
+  \item \emph{Conditional gates.} A constraint is emitted only when the
+    announcement triggers its gate (for example, \PMA{}'s
+    \texttt{force\_IMMEDIATE\_when\_critical} fires only when
+    \texttt{machine\_health} crosses \texttt{pm\_threshold}). The
+    catalogue is therefore announcement-dependent: different
+    conflicts elicit different constraint sets from the same agent.
+  \item \emph{Binary cross-domain constraints.} Each agent emits at
+    least one binary constraint over its home issue and a second issue
+    --- for example, \PSA{}'s \texttt{psa\_slow\_when\_breakdown\_imminent}
+    couples \texttt{production\_rate} and \texttt{maint\_window}. These
+    binaries are what makes the negotiation genuinely multi-issue
+    rather than four parallel single-issue negotiations.
+\end{itemize}
+
+A new agent --- whether a fifth ISA-95 function or a
+benchmark-specific subclass --- inherits these disciplines for free by
+inheriting from \texttt{AgentV5}.
+
+% ------------------------------------------------------------
+\section{The Marketplace Layer}
+\label{sec:impl-marketplace}
+
+The Marketplace layer is the implementation of the Mediator,
+\texttt{BidBus} and \texttt{ContractRecord} of
+Section~\ref{sec:arch-marketplace}. It lives in
+\texttt{src/marketplace/} and is the only layer with a non-trivial
+algorithmic core: every coordination event runs an A* search over the
+combinatorial space of bid combinations.
+
+\subsection{The Marketplace facade}
+
+\texttt{Marketplace} (in \texttt{src/marketplace/marketplace.py}) is the
+env-facing surface. It is a single Python class whose entry point
+\texttt{Marketplace.\_\_call\_\_(conflict, env)} returns either a
+composite \texttt{Contract} or the sentinel string
+\texttt{NEGOTIATION\_FAILED}. The environment swaps mechanisms by
+calling \texttt{env.set\_mechanism(...)}; every alternative mechanism in
+\texttt{src/baselines/} exposes the same call signature, so the
+mechanism choice is a single line in the experiment driver
+(Section~\ref{sec:impl-simframework}).
+
+Internally, each call runs the four phases of the protocol:
+
+\begin{enumerate}[leftmargin=1.8em,itemsep=0.15em]
+  \item \textbf{Announce.} Build a \texttt{ConflictAnnouncement} from
+    the conflict event and the current environment state; the
+    announcement carries the conflict type, the machine identifier, the
+    timestamp, and the small set of shared plant signals each agent is
+    permitted to read (\texttt{machine\_health}, \texttt{defect\_rate},
+    \texttt{spare\_lead\_time}). No agent's private beliefs are read.
+  \item \textbf{Bid.} For each of the four agents, call
+    \texttt{agent.propose\_bids(announcement, **kwargs)}; collect the
+    resulting bid lists into a list-of-lists indexed by agent.
+  \item \textbf{Mediate.} Pass the bid lists to the Mediator together
+    with a list of per-agent utility callbacks (closures over the
+    agent's constraint set, used by the mediator as in-region
+    tie-breakers).
+  \item \textbf{Record.} Append a \texttt{ContractRecordEntry} to the
+    audit log: the announcement, every published bid, the chosen bids,
+    the resulting contract (or the failure reason), and per-event
+    counters from the mediator search. The Marketplace also stashes the
+    bid lists and utility functions for an optional remediation call
+    (Section~\ref{subsec:impl-remediation}).
+\end{enumerate}
+
+Per \texttt{DD-005}, the Mediator is a logical component
+\emph{inside} the Marketplace layer, not a fifth agent: it has no
+beliefs, no desires, and no view of the plant. Its entire information
+set is the union of the published bids.
+
+\subsection{The mediator algorithm}
+\label{subsec:impl-mediator}
+
+The mediator's task, from Section~\ref{subsec:mediator}, is to find the
+welfare-maximising feasible combination of bids --- one per agent ---
+and return a single composite contract from the joint region of that
+combination. The implementation lives in
+\texttt{src/marketplace/mediator.py} (about 300 lines) and is an A*
+search over partial bid assignments. The optimisation problem and the
+admissible-heuristic priority key are stated formally in
+Section~\ref{subsec:mediator}; this section gives the implementation.
+
+\paragraph{Search state and expansion.}
+The search state is a \emph{partial combination}: a tuple of $d$ bids,
+one for each of the first $d$ agents, paired with the intersection of
+their bid regions (the \emph{joint region so far}). The root is the
+empty partial. Expansion at a state of depth $d$ tries each bid in the
+$(d{+}1)$-th agent's bid list: the new joint region is the intersection
+of the current joint region with the candidate bid's region; if the
+intersection is empty, the new state is \emph{branch-cut} and never
+queued; otherwise the new state is pushed onto the priority queue.
+A state of depth $4$ is \emph{complete}, and the first complete state
+popped from the queue is the answer.
+
+\paragraph{The priority key.}
+The priority key on each partial $p$ at depth $d$ is the negative of
+the admissible upper bound on the total utility reachable from $p$:
+%
+\begin{equation}
+  \label{eq:impl-astar}
+  f(p) \;=\; \underbrace{\sum_{i \le d} u_i(b_i)}_{g(p)\ :\ \text{utility committed}}
+           \;+\; \underbrace{\sum_{j > d} \max_{b \in B_j} u(b)}_{h(p)\ :\ \text{optimistic remainder}} ,
+\end{equation}
+%
+where $u_i(b_i)$ is the utility of the bid chosen for agent $i$ on the
+partial, and the suffix-maximum $h(p)$ is the largest utility each
+not-yet-chosen agent could contribute if its best bid happened to be
+jointly feasible. The implementation stores the suffix maximum as a
+pre-computed array \texttt{suffix\_max[]} (length $n{+}1$, populated
+once at search start) and the running $g(p)$ as an explicit field on
+each heap entry, so the priority is computed at push time in $O(1)$.
+Because branch-cutting can only \emph{remove} feasible completions, the
+suffix maximum is an admissible (never-underestimating) upper bound on
+the true remainder, and the first complete pop is the global maximiser
+of Equation~\eqref{eq:impl-astar}'s objective. This is
+\texttt{DD-014} --- the design decision that took the mediator from
+locally-greedy-with-branch-cuts to globally optimal in the sense of
+Hart, Nilsson and Raphael's A*~\cite{hart1968astar}.
+
+Listing~\ref{lst:impl-astar} sketches the priority computation.
+
+\begin{lstlisting}[language=Python,caption={The admissible priority key
+(simplified from \texttt{src/marketplace/mediator.py}).},label={lst:impl-astar}]
+# Pre-compute the suffix-max upper bound, once per select_contract call.
+max_per_agent = [max(b.utility for b in bs) if bs else 0.0
+                 for bs in bid_lists]
+suffix_max = [0.0] * (n_agents + 1)
+for j in range(n_agents - 1, -1, -1):
+    suffix_max[j] = suffix_max[j + 1] + max_per_agent[j]
+
+# At push time, priority = -(g(p) + h(p)).
+priority = -(sum_partial + suffix_max[depth])
+heapq.heappush(heap, (priority, counter, sum_partial, partial_bids,
+                      joint_region))
+\end{lstlisting}
+
+\paragraph{Joint-region tie-break.}
+When a complete combination is popped, its joint region typically still
+contains more than one contract. The implementation chooses one by
+maximising the sum of \emph{agent} utilities --- not bid utilities ---
+over the region: each agent supplies a closure \texttt{u(contract)} that
+re-derives its full constraint set and sums the satisfied weights. The
+mediator iterates over the joint region and picks the contract that
+maximises the summed \texttt{u}; ties are broken by the canonical
+enumeration order of the joint contract space, so the tie-break is
+deterministic. The closures are constructed by the Marketplace facade
+once per call (Section~\ref{subsec:impl-mediator}); the mediator never
+sees the agents themselves, preserving \texttt{DD-005}'s separation.
+
+\paragraph{Empty bid set as a failure mode.}
+If any agent submits an empty bid list, the mediator returns
+\texttt{FAILED} with a diagnostic reason naming the empty-bid agent;
+this is the structural failure mode introduced in
+Section~\ref{subsec:mediator}. The empty-bid case is the only way
+mediation can fail at \texttt{top\_n}$=2$ in practice, because the
+always-on baselines of Section~\ref{subsec:impl-constraints} guarantee
+every agent emits at least one constraint. The failure rate observed in
+the calibration sweeps (Chapter~\ref{ch:results}) reflects exactly the
+expressiveness--feasibility trade-off of \texttt{DD-007}.
+
+Figure~\ref{fig:impl-astar} illustrates the search on a small example,
+this time annotating the priority key for each state.
+
+\nexustikzfigure{fig:impl-astar}{A* search over partial bid
+combinations, annotated with the admissible priority key
+$f(p) = g(p) + h(p)$ (Eq.~3.6 / Eq.~4.1). The expansion order is
+governed by $f$; branch-cut nodes have an empty joint region and are
+never queued; the first complete pop is the global welfare maximiser
+(\texttt{DD-014}).}{fig_impl_astar}
+
+\subsection{Remediation under env-side capacity failure}
+\label{subsec:impl-remediation}
+
+The Marketplace alone produces contracts that maximise joint welfare
+\emph{over the agents' published bids}; it does not consult the
+environment's resource state. When the environment subsequently applies
+the contract --- the \texttt{maint\_window}, \texttt{supply\_horizon}
+and so on (Section~\ref{sec:impl-simframework}) --- it may find that
+the resource the contract calls for is exhausted: the maintenance crew
+is fully booked, the supplier order quota is gone. The earlier
+implementation handled this by silently rewriting the offending contract
+dimension to its do-nothing default (\texttt{DD-026} surfaced that the
+silent rewrites were hiding a material part of the env-side cost
+structure from the audit stream that the Fence layer's claims are
+anchored on).
+
+\texttt{DD-026} replaced the silent path with an explicit failure
+record and a remediation hook on the mechanism interface
+(\texttt{DD-027}). When the environment detects a capacity failure, it
+calls \texttt{mechanism.remediate(env, forbidden\_dims, original\_contract)},
+passing the set of dimensions that are forbidden to a non-default value
+on this conflict. The Marketplace's implementation builds an
+\texttt{allowed\_region} --- the subset of the contract space where
+every forbidden dimension is pinned to its do-nothing default --- and
+re-invokes the mediator with the original bid lists and utility
+closures, plus an optional \texttt{region\_filter} keyword that
+pre-intersects every bid region with the allowed region before the A*
+expansion runs. If the mediator finds a contract in the constrained
+region the Marketplace returns it; otherwise it returns \texttt{None}
+and the environment falls back to its conservative default. Either way,
+the environment appends an explicit-failure record to its audit log, so
+the rate and shape of capacity-induced rewrites is visible to the Fence
+audit stream.
+
+The Siloed and RBC baselines (Section~\ref{sec:impl-baselines})
+implement \texttt{remediate} by returning \texttt{None} unconditionally.
+This is the documented architectural asymmetry of \texttt{DD-027}: only
+a joint, search-based mediator can usefully remediate, because only the
+joint mediator has anywhere to search. A static threshold rule already
+produced the only contract it was going to produce given the current
+plant signals; an independent home-issue picker cannot re-coordinate
+without the cross-agent visibility it does not have.
+
+\subsection{Contract record and audit instrumentation}
+\label{subsec:impl-record}
+
+The Contract Record (\texttt{src/marketplace/contract\_record.py}) is
+the audit log of every coordination event. Each entry --- a
+\texttt{ContractRecordEntry} dataclass --- carries the
+\texttt{ConflictAnnouncement} verbatim, every bid that was published
+(serialised through \texttt{Bid.to\_dict}), the bids the mediator
+chose, the resulting contract (or the failure reason), the
+joint-region size at termination, the bid utility sum, and per-event
+counters for branches expanded and branches cut. The record is the
+single source of truth for downstream analytics: the Fence layer
+(Section~\ref{sec:impl-fence}) consumes it as an audit stream; the CUSO
+baseline (Section~\ref{sec:impl-baselines}) consumes the persisted
+agent-belief snapshots to compute its full-information ceiling
+post-hoc.
+
+Two persistence shapes are supported: in-memory, for the test suite and
+for the per-event analytics of Chapter~\ref{ch:results}; and JSON, for
+cross-process reproducibility checks. Per \texttt{DD-032}, the entries
+also serialise the per-agent belief snapshot taken at bid time, so the
+CUSO post-processor can be invoked against an old audit log without
+re-running the simulation.
+
+% ------------------------------------------------------------
+\section{The Fence Layer}
+\label{sec:impl-fence}
+
+The Fence layer is the implementation of the three-tier safety
+classifier of Section~\ref{sec:arch-fence}. It lives in
+\texttt{src/fence/} and is the smallest of the four layers ---
+about 370 lines including the default rule suite. Its smallness is the
+point: the layer's job is to read the Marketplace's audit log and
+emit a parallel stream of safety classifications, without reaching into
+any other layer.
+
+\subsection{Rule structure}
+
+A safety rule (\texttt{SafetyRule} in
+\texttt{src/fence/classifier.py}) is a frozen dataclass with two
+predicates over a contract record entry:
+
+\begin{lstlisting}[language=Python,caption={The safety-rule
+abstraction; each rule is one violation predicate paired with a
+narrower-margin boundary predicate.},label={lst:impl-rule}]
+@dataclass(frozen=True)
+class SafetyRule:
+    name: str
+    description: str
+    check_violation: Callable[[ContractRecordEntry, Thresholds], bool]
+    check_boundary:  Callable[[ContractRecordEntry, Thresholds], bool]
+\end{lstlisting}
+
+The classifier evaluates every rule against every entry, assigning
+the highest tier any rule triggers:
+
+\begin{itemize}[leftmargin=1.4em,itemsep=0.15em]
+  \item $\sigma_0$ (\emph{Normal}) --- no rule's violation predicate
+    fires, no rule's boundary predicate fires;
+  \item $\sigma_1$ (\emph{Warning}) --- at least one boundary
+    predicate fires; no violation predicate does;
+  \item $\sigma_2$ (\emph{Critical}) --- at least one violation
+    predicate fires, or the entry is a \texttt{NEGOTIATION\_FAILED}
+    entry (a coordination event that produced no contract is
+    $\sigma_2$ by convention).
+\end{itemize}
+
+The threshold band for the boundary predicate is a single number ---
+ten per cent of the safe range --- shared across rules.
+
+\subsection{The default rule suite}
+
+The default rule suite installs four rules, one per contract issue,
+each encoding a domain safety invariant inherited from the v4 lineage:
+
+\begin{itemize}[leftmargin=1.4em,itemsep=0.15em]
+  \item \texttt{no\_fast\_when\_breakdown\_imminent} ---
+    \texttt{production\_rate} is \textsc{fast} while
+    \texttt{machine\_health} is below the breakdown threshold.
+  \item \texttt{maintain\_when\_health\_critical} ---
+    \texttt{maint\_window} is \textsc{none} while
+    \texttt{machine\_health} is below the preventive-maintenance
+    threshold.
+  \item \texttt{hold\_quality\_when\_severe} ---
+    \texttt{quality\_action} is \textsc{no\_hold} while
+    \texttt{defect\_rate} is at or above twice the quality control limit.
+  \item \texttt{preorder\_when\_long\_lead} ---
+    \texttt{supply\_horizon} is \textsc{h0} while
+    \texttt{spare\_lead\_time} exceeds the shortage horizon.
+\end{itemize}
+
+These four rules are not the only possible suite. The rule list is a
+\texttt{Classifier} constructor argument; new rules can be installed
+without touching any other layer, and the classifier is unit-tested
+against rule sets the regression suite supplies directly. This is the
+practical realisation of the architectural claim of
+Section~\ref{subsec:fence-rationale}: safety governance is replaceable
+because it is informationally limited to the audit stream.
+
+\subsection{Audit instrumentation and the explicit-failure log}
+
+The Fence reads the Contract Record post-hoc and produces a parallel
+stream of \texttt{FenceRecord} entries. Each \texttt{FenceRecord}
+carries the conflict identifier, the assigned tier, the list of rule
+names whose violation or boundary predicate fired, and the small set
+of plant signals (\texttt{machine\_health}, \texttt{defect\_rate},
+\texttt{spare\_lead\_time}) the rule predicates evaluated against. The
+implementation supports two analytics surfaces:
+\texttt{Classifier.tier\_distribution()} --- the proportion of
+$\sigma_0$, $\sigma_1$ and $\sigma_2$ entries on a run, the headline
+number Chapter~\ref{ch:results} reports --- and
+\texttt{Classifier.violations\_by\_rule()} --- per-rule tallies, used
+for diagnostics when a sigma tier shifts unexpectedly.
+
+\texttt{DD-026} adds a second audit stream alongside the Contract
+Record: the \emph{explicit-failure log}. When the environment's resource
+capacity is exhausted, the failure --- and any remediation attempt
+(Section~\ref{subsec:impl-remediation}) --- is recorded in
+\texttt{env.\_env\_failure\_log} with a structured entry naming the
+exhausted resource, the original contract, the remediated contract (if
+any), and the timestamp. The Fence layer consumes this log alongside
+the Contract Record so that capacity-induced contract rewrites are
+visible to the safety-audit pipeline rather than silently rewriting
+recorded contracts. The result, on the post-\texttt{DD-026}
+implementation, is that the audit stream is a complete reconstruction
+of what the plant actually did, not what the mechanism asked for.
+
+Figure~\ref{fig:impl-fence-flow} consolidates the layout: the
+Marketplace appends to the Contract Record on every event; the
+environment appends to its failure log on every capacity-induced
+rewrite; the Fence consumes both and emits the tier-classified
+\texttt{FenceRecord} stream.
+
+\nexustikzfigure{fig:impl-fence-flow}{Audit-stream topology. The
+Marketplace appends one \texttt{ContractRecordEntry} per coordination
+event (\texttt{DD-005}); the environment appends one entry to
+\texttt{env.\_env\_failure\_log} per capacity-induced rewrite
+(\texttt{DD-026}); the Fence classifier reads both streams and emits a
+parallel \texttt{FenceRecord} stream with the three-tier label.}{fig_impl_fence_flow}
+
+% ------------------------------------------------------------
+\section{Baselines}
+\label{sec:impl-baselines}
+
+The Marketplace facade of Section~\ref{sec:impl-marketplace} is the
+\NEXUS{} mechanism. The empirical work of Chapter~\ref{ch:results}
+compares \NEXUS{} against alternative mechanisms that are
+\emph{architectural baselines} in the sense of \texttt{DD-033}: each
+isolates a single architectural axis on which \NEXUS{} can be
+characterised. They are not stalking-horses against which \NEXUS{} is
+expected to dominate on plant outcomes; the methodological reframing of
+\texttt{DD-033} and \texttt{DD-034} says explicitly that
+Chapter~\ref{ch:results} validates architectural properties --- safety
+audit tier distribution, max-sum-utility alignment, bounded disclosure
+--- not throughput or makespan dominance over the baselines. This
+section documents the implementations.
+
+\subsection{Siloed: no coordination}
+\label{subsec:impl-siloed}
+
+The Siloed baseline (\texttt{src/baselines/siloed.py}) models a
+multi-vendor MOM deployment in which each ISA-95 Level~3 function runs
+its own scheduler with no cross-domain data sharing. There is no
+mediator, no joint search, and no negotiation; each agent picks its
+home issue from its own constraints, and the mechanism composes the
+four picks into a contract.
+
+The implementation is intentionally small: each agent is constructed
+with \texttt{cross\_domain\_awareness=False} (the flag of
+Section~\ref{subsec:impl-ceilings}), so its
+\texttt{derive\_constraints} call drops every cross-domain constraint
+at emission. The Siloed mechanism then calls each agent's
+\texttt{propose\_bids} and selects, for each home issue, the contract
+\emph{value} that the highest-utility home-issue bid prefers; the four
+home picks are composed into a single \texttt{Contract}. When an agent
+emits no bids the corresponding issue defaults to its do-nothing value
+(\textsc{normal}, \textsc{none}, \textsc{no\_hold}, \textsc{h0}).
+
+Two properties make Siloed a clean architectural baseline. First, the
+mechanism reuses the \texttt{AgentV5} class hierarchy verbatim, so the
+contrast with \NEXUS{} is exactly the contrast between the joint search
+and its absence --- no other variable changes. Second, the mechanism
+\emph{cannot} remediate: \texttt{SiloedMechanism.remediate(...)}
+returns \texttt{None} unconditionally, which is the documented
+asymmetry of \texttt{DD-027}. The contrast is what makes the audit
+stream of Section~\ref{sec:impl-fence} more than a tautology: \NEXUS{}
+and Siloed apply the same Fence rules to comparable contracts, and the
+difference in tier distribution is a measurement of what the joint
+search delivers in safety terms.
+
+\subsection{Rule-Based Coordination}
+\label{subsec:impl-rbc}
+
+The Rule-Based Coordination (RBC) baseline (\texttt{src/baselines/rbc.py})
+implements the static-threshold-rule design of \texttt{DD-021}. It is
+the second baseline of the Coordination Comparison: it issues
+coordinated decisions across all four contract issues, but its
+coordination is by independent threshold rule rather than by joint
+search. The threshold table is reproduced in
+Listing~\ref{lst:impl-rbc}.
+
+\begin{lstlisting}[language=Python,caption={The RBC threshold table
+(simplified from \texttt{src/baselines/rbc.py}); each dimension's
+decision is a function of one plant signal only.},label={lst:impl-rbc}]
+def decide(announcement):
+    # maintenance dimension (PMA domain)
+    if announcement.machine_health < 0.5:     mw = IMMEDIATE
+    elif announcement.machine_health < 0.7:   mw = PLANNED
+    else:                                     mw = NONE
+    # quality dimension (QCA domain)
+    if announcement.defect_rate > 0.15:       qa = HOLD_FULL
+    elif announcement.defect_rate > 0.08:     qa = HOLD_LIGHT
+    else:                                     qa = NO_HOLD
+    # supply dimension (SCA domain)
+    if announcement.spare_lead_time > 48:     sh = H72
+    elif announcement.spare_lead_time > 24:   sh = H48
+    else:                                     sh = H24
+    # production dimension (PSA domain): no dynamic adjustment
+    return Contract(production_rate=NORMAL, maint_window=mw,
+                    quality_action=qa, supply_horizon=sh)
+\end{lstlisting}
+
+RBC has three properties worth noting. First, it is \emph{deterministic}:
+identical announcements always yield the identical contract, with no
+sampling and no search; there is therefore no failure-fallback path of
+the kind Section~\ref{subsec:impl-mediator} described for the joint
+mediator. Second, it reads only the shared plant signals every
+mechanism sees --- it does not inspect agent beliefs and has no
+inter-agent visibility, so the privacy comparison of
+Section~\ref{sec:arch-privacy} is well-defined. Third, like Siloed, RBC
+cannot remediate: its threshold rules have already produced the only
+contract they were going to produce given the current plant signals.
+RBC contrasts with \NEXUS{} along exactly one axis --- dynamic joint
+mediation versus static per-dimension rule --- and that single-axis
+contrast is what makes the architectural comparison interpretable.
+
+\subsection{The centralised utility-sum optimiser (CUSO)}
+\label{subsec:impl-cuso}
+
+The third baseline is the Centralised Utility-Sum Optimiser, CUSO
+(\texttt{src/baselines/centralized\_utility.py}, \texttt{DD-032}). It
+replaces the NSGA-III front-style centralised baseline used in earlier
+iterations of the empirical plan (\texttt{DD-028}, \texttt{DD-029},
+both superseded) with a baseline that is target-aligned to the
+\NEXUS{} mediator: CUSO maximises the same objective as \NEXUS{} ---
+the sum of agent utilities --- but under full information access to
+every agent's utility function.
+
+The implementation is a single function: given a
+\texttt{ConflictAnnouncement} and the four agents, enumerate the entire
+108-contract joint space and return
+$\arg\max_{c \in \Omega} \sum_a u_a(\text{state}, c)$. The
+maximum-utility-sum it returns is the \emph{ceiling} that
+\NEXUS{} could attain under its bounded-disclosure constraint:
+\NEXUS{} sees only bid summaries, CUSO sees every agent's full utility
+function, and the alignment ratio
+$\text{NEXUS}/\text{CUSO}$ is a direct measurement of how much joint
+utility \NEXUS{} recovers under the bounded-disclosure constraint that
+makes it a distributed mechanism in the first place.
+
+\begin{lstlisting}[language=Python,caption={CUSO contract selection
+(simplified from \texttt{src/baselines/centralized\_utility.py},
+\texttt{DD-032}). CUSO enumerates the 108-contract joint space at
+each conflict and returns the welfare-maximising contract.},label={lst:impl-cuso}]
+def cuso_select(announcement, agents):
+    contracts = all_contract_indices()           # |Omega| = 108
+    best = None; best_sum = -inf
+    for c in contracts:
+        total = sum(a.utility_for_contract(announcement, c) for a in agents)
+        if total > best_sum:
+            best, best_sum = c, total
+    return CUSOResult(optimal_contract=best, max_utility_sum=best_sum)
+\end{lstlisting}
+
+CUSO is a \emph{post-processing} baseline, not a runtime mechanism. It
+is not installed into the environment via \texttt{env.set\_mechanism};
+it is invoked, per conflict, by the Phase~F post-processor
+\texttt{experiments/analyze\_phase\_f\_cuso.py} against the recorded
+audit log (\texttt{Marketplace.contract\_record} persists the
+\texttt{ConflictAnnouncement} and per-agent belief snapshot for exactly
+this purpose, per \texttt{DD-032}). The post-processor reports the
+alignment ratio over a sweep and the bits-of-disclosure model that
+\texttt{DD-030}'s information-theoretic ceiling reframes for CUSO.
+
+\subsection{Other mechanisms in the codebase}
+
+Two further mechanisms are present in \texttt{src/baselines/} but
+are not used as primary baselines in Chapter~\ref{ch:results}. The
+Sequential cascade
+(\texttt{src/baselines/sequential.py}, \texttt{DD-012}) implements the
+domain-authority cascade \PSA{}~$\to$~\PMA{}~$\to$~\QCA{}~$\to$~\SCA{}
+in which each stage commits a contract dimension conditioned on
+upstream picks. It was dropped from the primary comparison after
+\texttt{DD-019}'s investigation showed a 41\% mediator-failure rate on
+the resource-constrained synthetic-v2 environment --- a structural
+commitment-asymmetry property that makes the comparison incomparable on
+the outcomes the thesis cares about. The Contract Net mechanism
+(\texttt{src/baselines/cnp.py}, \texttt{DD-001}) implements single-winner
+contract-net bidding; it was dropped after the diagnostic that the
+mechanism collapses to fixed-priority routing on the Brandimarte
+benchmark family. Both implementations are preserved in code so the
+historical comparisons remain reproducible, but neither is loaded by
+the canonical experiment driver.
+
+Figure~\ref{fig:impl-baselines} consolidates the four mechanisms used
+in the empirical chapter, on the two architectural axes that matter
+for Chapter~\ref{ch:results}: \emph{joint search} (yes/no) and
+\emph{full information access} (yes/no).
+
+\nexustikzfigure{fig:impl-baselines}{The four mechanism implementations
+used in Chapter~\ref{ch:results}, placed on the axes \emph{joint
+search} (whether a search over contract combinations is performed) and
+\emph{full information access} (whether the mechanism reads private
+agent state). \NEXUS{} is the only mechanism that combines joint
+search with bounded disclosure.}{fig_impl_baselines}
+
+% ------------------------------------------------------------
+\section{Benchmark Instances}
+\label{sec:impl-benchmarks}
+
+The \texttt{src/benchmarks/} package implements two families of
+benchmark instance generators. The first is the classical Brandimarte
+\cite{brandimarte1993} FJSP family, parsed from the SchedulingLab
+instance files; the second is a pair of synthetic generators
+(\texttt{synthetic\_v1}, \texttt{synthetic\_v2}) that produce FJSP-like
+instances with controlled stress on specific architectural properties.
+Each family lives in its own subpackage and exposes the same
+\texttt{FJSPInstance} dataclass to the environment, so swapping benchmark
+families is a one-line change in the experiment driver.
+
+\subsection{Brandimarte parser}
+
+The Brandimarte parser (\texttt{src/parsers.py}, about 80 lines) is the
+implementation of the SchedulingLab instance format: a header line
+giving the number of jobs and machines, then one line per job giving
+the operation count followed by a list of \texttt{(machine\_id,
+processing\_time)} options per operation. The parser auto-detects
+0-based versus 1-based machine indexing (Mk06 uses the former; Mk07--Mk10
+use the latter) and normalises to 0-based; the resulting
+\texttt{FJSPInstance} is the dataclass the environment consumes
+verbatim.
+
+The Brandimarte family has been the canonical FJSP benchmark since
+1993; \NEXUS{} inherits it as the canonical \emph{architectural} stress
+test for the multi-issue mediator. The empirical observation that the
+Brandimarte family produces a particular pattern of cross-functional
+trade-offs --- thesis-relevant for the Coordination Comparison ---
+motivates the second benchmark family.
+
+\subsection{Synthetic generators and the subclass architectural pivot}
+\label{subsec:impl-synthpivot}
+
+The Brandimarte family is rich on the scheduling axis but does not
+expose every architectural property the thesis cares about. The
+synthetic generators were introduced (\texttt{DD-015}) to produce
+FJSP-like instances with explicit, calibrated stress on multi-issue
+coordination dimensions: coupling density across the four issues,
+cross-domain conflict balance, breakdown intensity, and disruption
+clustering.
+
+A non-obvious implementation decision arose at the agent-integration
+stage. The synthetic generators expose state variables (cascade
+amplifiers, resource capacities, critical-machine flags) that the
+agents' constraint derivations should be able to read --- but those
+state variables are not in the standard \texttt{ConflictAnnouncement}
+contract and adding them globally would pollute the home agents that
+run on Brandimarte. The alternative considered was to modify the
+abstract agent in-place; the alternative selected, in \texttt{DD-017},
+was to introduce a \emph{synthetic-aware subclass} of each home agent
+that reads the synthetic-specific state through a controlled extension
+interface. The repository tree shows the result:
+\texttt{src/agents/synthetic\_v2/} mirrors \texttt{src/agents/} with one
+subclass per home agent (\texttt{synthetic\_pma\_v2}, etc.) inheriting
+from the corresponding base.
+
+The pivot has two consequences worth naming. First, the home agents
+remain benchmark-agnostic: nothing in \texttt{src/agents/}\{psa,pma,qca,sca\}\texttt{.py}
+mentions \texttt{synthetic\_v2}, and the Brandimarte regression remains
+byte-identical to the pre-pivot baseline. Second, the synthetic-aware
+subclasses are a clean target for further extension: the same pattern
+is used for the industrial automotive extensions of \texttt{DD-023} that
+become the Chapter~\ref{ch:industrial} case-study material. The
+architectural pivot is therefore not a one-off fix; it is the
+mechanism by which the architecture is extensible to benchmark-specific
+domains without weakening the home-agent contract.
+
+\subsection{Synthetic-v2: resource contention, critical machines, cascade}
+
+The \texttt{synthetic\_v2} generator (\texttt{DD-019}) is the version
+used by Chapter~\ref{ch:results}. It produces FJSP-like instances with
+three pre-registered features the Brandimarte family does not express:
+
+\begin{itemize}[leftmargin=1.4em,itemsep=0.15em]
+  \item \emph{Resource contention.} A finite pool of maintenance crews
+    and a finite supplier-order quota per simulation period; capacity
+    can be exhausted, which is what triggers the explicit-failure path
+    of Section~\ref{subsec:impl-remediation}. Scaled per shop size:
+    one crew and one supplier on the \texttt{small} preset, two crews
+    and one supplier on \texttt{medium} and \texttt{large} (Molenaers
+    et~al.\ ABC criticality framework, Xia 2021 dual-sourcing
+    adapted to a single shared supplier).
+  \item \emph{Critical machines.} Twenty per cent of machines are
+    flagged \emph{critical}, in line with the Pareto criticality
+    fraction documented by Molenaers et~al.; missed preventive
+    maintenance on a critical machine triggers cascade effects on
+    downstream defect rates.
+  \item \emph{Cascade consequences.} Missed PM on a critical machine
+    amplifies the downstream defect rate by a per-level factor
+    (\texttt{low}~$0.18$, \texttt{medium}~$0.26$, \texttt{high}~$0.35$),
+    matching the bounds reported by Nourelfath et~al.\ 2016.
+\end{itemize}
+
+Figure~\ref{fig:impl-benchmark} shows the data flow from instance
+generator to environment to mechanism: the same end-to-end pipeline is
+used for Brandimarte and for the synthetic generators; the only
+difference is which generator populates \texttt{FJSPInstance} and which
+environment subclass picks up the synthetic-specific state.
+
+\nexustikzfigure{fig:impl-benchmark}{Benchmark and simulation pipeline.
+The Brandimarte and synthetic generators both produce
+\texttt{FJSPInstance}; the environment (and, for the synthetic-v2
+family, its subclass) loads the instance, registers the mechanism, and
+runs the discrete-event loop of Section~\ref{sec:impl-simframework}.
+The synthetic-aware agent subclasses (\texttt{DD-017}) reach into the
+synthetic state through a controlled interface.}{fig_impl_benchmark}
+
+% ------------------------------------------------------------
+\section{Simulation Framework}
+\label{sec:impl-simframework}
+
+The simulation framework is the discrete-event substrate against which
+the architecture is evaluated. It lives in \texttt{src/environment/}
+and is implemented on top of \texttt{simpy}, the standard Python
+discrete-event simulation library. The framework is independent of the
+choice of mechanism: \NEXUS{}, Siloed, RBC and CUSO all run on the same
+environment, and the environment never inspects which mechanism is
+installed beyond the protocol surface
+(\texttt{env.set\_mechanism(mech)}).
+
+\subsection{Plant physics}
+
+The environment models a flexible job shop in which jobs arrive as a
+Poisson stream, each job is a sequence of operations, and each
+operation has a set of machine options with per-machine processing
+times. Three physical mechanisms drive the cross-functional dynamics:
+
+\begin{itemize}[leftmargin=1.4em,itemsep=0.15em]
+  \item \emph{Weibull machine degradation.} Each machine's
+    \texttt{machine\_health} is given by
+    $\exp(-(\text{effective\_age}/\text{scale})^{\text{shape}})$ with
+    shape $2$ and scale $120$ hours; effective age is total processing
+    hours minus the maintenance offset, so \texttt{apply\_maintenance}
+    resets effective age to zero and total processing hours continues
+    to climb monotonically.
+  \item \emph{Defect sigmoid.} The instantaneous defect probability is
+    $\sigma((0.6 - \text{health}) \cdot 20)$, a sigmoid centred at
+    $\text{health} = 0.6$ with steepness $20$ (the v4 \texttt{D1=B}
+    calibration). The quality hold contract dimension modulates this
+    probability via a multiplicative factor per action level.
+  \item \emph{Shortage triggers.} Each spare part has a per-instance
+    \texttt{spare\_lead\_time}; the \texttt{shortage\_threshold} of
+    $24$ hours (\texttt{DD-010}) gates whether a low-stock event is
+    raised as a \textsc{shortage} conflict.
+\end{itemize}
+
+These mechanisms are inherited from the v4 lineage verbatim
+(\texttt{DD-003} treats the environment as a preserved asset); the v5
+changes are confined to the conflict-resolution and contract-application
+paths.
+
+\subsection{Event lifecycle}
+
+A simulation run is a SimPy main loop that interleaves three event
+families: job arrivals, operation start/end events, and conflict
+events. Figure~\ref{fig:impl-eventloop} shows the loop. On each
+conflict the environment hands control to the installed mechanism
+(\texttt{Marketplace}, \texttt{SiloedMechanism},
+\texttt{RuleBasedCoordination}, etc.) via the mechanism's
+\texttt{\_\_call\_\_(conflict, env)} entry point; the mechanism returns
+either a composite \texttt{Contract} or the \texttt{NEGOTIATION\_FAILED}
+sentinel; the environment then projects each contract dimension onto
+the plant state.
+
+\nexustikzfigure{fig:impl-eventloop}{The simulation event loop. The
+SimPy main loop dispatches job-arrival, operation start/end, and
+conflict events. On each conflict the installed mechanism returns a
+composite \texttt{Contract}, which the environment projects onto plant
+state. Capacity exhaustion triggers the explicit-failure path of
+\texttt{DD-026}.}{fig_impl_eventloop}
+
+Contract application is straightforward: \texttt{maint\_window} drives
+\texttt{ms.apply\_maintenance()} for \textsc{planned} and
+\textsc{immediate}; \texttt{quality\_action} sets a quality-hold window
+during which defects are scaled by the action's hold factor;
+\texttt{supply\_horizon} sets a preorder window during which shortage
+risk is suppressed; \texttt{production\_rate} adjusts the per-job
+processing rate multiplier. On a \texttt{NEGOTIATION\_FAILED} return
+the environment falls back to a conservative default --- apply
+maintenance for \textsc{maintenance} and \textsc{shortage} conflicts;
+no action for \textsc{quality} --- and the Fence layer classifies the
+event as $\sigma_2$ by the convention of
+Section~\ref{subsec:fence-tiers}.
+
+\subsection{Resource capacity and the explicit-failure path}
+
+The \texttt{synthetic\_v2} environment subclass adds a per-conflict
+resource-capacity check on the maintenance crew and the supplier
+quota. When the requested maintenance window is \textsc{planned} or
+\textsc{immediate} but no crew slot is free, or when the supply horizon
+is non-zero but the supplier quota is exhausted, the environment used
+to silently rewrite the offending dimension to its do-nothing default
+--- the cost-hiding pattern that \texttt{DD-026} replaced. The current
+implementation calls \texttt{mechanism.remediate(env, forbidden\_dims,
+original\_contract)} (Section~\ref{subsec:impl-remediation}), accepts
+the remediated contract if it is itself capacity-applicable, and
+otherwise falls back to the conservative default --- but, crucially,
+appends an explicit-failure record to \texttt{env.\_env\_failure\_log}
+in either case.
+
+The result, for the Fence audit pipeline of Section~\ref{sec:impl-fence},
+is that the audit stream is now a faithful reconstruction of what the
+plant actually did and why, not what the mechanism hoped would happen.
+For the joint mediator (\NEXUS{}) the remediation hook recovers a
+non-trivial fraction of capacity-induced rewrites; for Siloed and RBC
+the remediation hook returns \texttt{None}, by the architectural
+asymmetry of \texttt{DD-027}, and the conservative default is applied.
+
+% ------------------------------------------------------------
+\section{Testing Strategy}
+\label{sec:impl-testing}
+
+The implementation is accompanied by an automated regression suite of
+\textbf{350 tests} ($349$ \textsc{pass}, $1$ \textsc{skip}) organised
+into 29 \texttt{pytest} modules under \texttt{tests/}. The suite is
+what lets the architecture be modified with confidence: every design
+decision named in this chapter was developed under the test suite as
+both regression scaffold and acceptance gate, and the admissible-heuristic
+correction of \texttt{DD-014}, for instance, was made and verified
+against it without breaking any test that pre-dated the correction.
+
+\subsection{Test categories}
+
+The suite is organised around the four-layer architecture, not around
+test types. Figure~\ref{fig:impl-tests} shows the layout: each
+top-level module addresses one component of one layer.
+
+\nexustikzfigure{fig:impl-tests}{Test-suite organisation. The 29
+\texttt{pytest} modules cover every component of every layer plus the
+baseline mechanisms, the benchmark generators, the simulation
+framework, and the cross-cutting determinism and integration tests.}{fig_impl_tests}
+
+Five categories of test are exercised across the suite, in roughly
+descending share of the 350-test budget:
+
+\begin{itemize}[leftmargin=1.4em,itemsep=0.15em]
+  \item \emph{Unit tests} on the core data structures
+    (\texttt{test\_constraint.py}, \texttt{test\_bid.py},
+    \texttt{test\_contract.py}, \texttt{test\_fence.py}) --- pure
+    structural assertions on the dataclasses and the rule predicates.
+  \item \emph{Per-component logic tests} on every agent
+    (\texttt{test\_agent\_\{base,psa,pma,qca,sca\}.py}), on the
+    mediator (\texttt{test\_mediator.py}), on the Marketplace
+    orchestrator (\texttt{test\_marketplace.py}), on every baseline
+    (\texttt{test\_baseline\_\{cnp,rbc,sequential,siloed\}.py}), and on
+    the CUSO disclosure model (\texttt{test\_cuso\_disclosure.py}).
+  \item \emph{Property-based tests} on cross-cutting invariants:
+    \texttt{test\_agent\_utility\_for\_contract.py} checks that the
+    agent's utility function is consistent with its constraint set;
+    \texttt{test\_determinism.py} checks that two independent runs of
+    the same configuration produce byte-identical audit logs;
+    \texttt{test\_env\_explicit\_failed.py} checks that every
+    capacity-induced rewrite is logged.
+  \item \emph{Benchmark and generator tests}
+    (\texttt{test\_synthetic\_\{generator,subclasses\}.py},
+    \texttt{test\_synthetic\_v2\_\{generator,environment,agents\}.py})
+    --- structural and statistical assertions on the synthetic
+    instance distributions.
+  \item \emph{Integration tests}: \texttt{test\_integration\_mk06.py}
+    runs an end-to-end simulation on Brandimarte Mk06 with each
+    mechanism, asserts shape invariants on the resulting audit log,
+    and compares headline counts against a checked-in reference. This
+    is the test that catches cross-cutting regressions the unit tests
+    miss.
+\end{itemize}
+
+\subsection{A representative test pattern}
+
+The flavour of the suite is captured by the typical regression-test
+shape: construct a small, hand-built configuration that targets one
+property of one component, run the component, and assert structural
+properties of the result.
+
+\begin{lstlisting}[language=Python,caption={Illustrative test pattern.
+The pattern is repeated across the 29 test modules: a small,
+deterministic input, one mechanism call, an assertion on the
+audit-log shape.},label={lst:impl-test}]
+def test_mediator_global_optimum_under_branch_cut():
+    # Two agents, three bids each: by construction the locally-greedy
+    # mediator would pick a sub-optimal completion.
+    bid_lists = build_two_agent_branch_cut_scenario()
+    mediator = Mediator()
+    result = mediator.select_contract(bid_lists, ANNOUNCEMENT, utility_fns=None)
+    # Globally optimal sum-utility = 5.0; locally-greedy would yield 3.0.
+    assert result.status == "OK"
+    assert result.bid_utility_sum == pytest.approx(5.0)
+\end{lstlisting}
+
+\subsection{Determinism as a test substrate}
+
+The single most powerful test in the suite is
+\texttt{test\_determinism.py}: it runs each mechanism on each benchmark
+across a configurable number of seeds and asserts that the resulting
+audit logs are byte-identical to a checked-in reference. Determinism is
+the test substrate: when a refactor changes some intermediate detail,
+the determinism test catches it before any property-level test does.
+The empirical claim of Chapter~\ref{ch:results} that every result rests
+on a byte-identical recomputation is the consequence of this discipline,
+not a separate claim --- the test suite is what makes the
+reproducibility property structural rather than aspirational.
+
+\subsection*{Summary}
+
+This chapter has documented the implementation of \NEXUS{}. The
+codebase mirrors the four-layer decomposition of
+Chapter~\ref{ch:architecture} as five Python subpackages with a strict
+import graph (Section~\ref{sec:impl-overview}); the Worker layer
+implements the BDI agents over a shared
+\texttt{AgentV5} base class with mono-dimensional authority enforced by
+per-agent home-issue weight ceilings (Section~\ref{sec:impl-workers});
+the Marketplace layer realises the multi-issue mediator as a branch-cut
+A* search with an admissible priority key, plus a remediation hook for
+env-side capacity failures (Section~\ref{sec:impl-marketplace}); the
+Fence layer is a small post-hoc rule classifier reading the Contract
+Record and the explicit-failure log (Section~\ref{sec:impl-fence});
+three architectural baselines --- Siloed, RBC, and the post-hoc CUSO
+centralised ceiling --- are implemented as drop-in mechanism
+alternatives that isolate single architectural axes
+(Section~\ref{sec:impl-baselines}); two benchmark families are
+supported through a controlled subclass-extension pattern that keeps
+the home agents benchmark-agnostic
+(Section~\ref{sec:impl-benchmarks}); the simulation framework is a
+SimPy discrete-event environment with an explicit-failure path for
+resource exhaustion (Section~\ref{sec:impl-simframework}); and the
+whole assembly is held in place by a deterministic, layer-organised
+test suite of $350$ tests (Section~\ref{sec:impl-testing}). The next
+chapter turns from how the system is built to what it does.

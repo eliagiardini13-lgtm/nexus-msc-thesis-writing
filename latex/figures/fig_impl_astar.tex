@@ -1,0 +1,59 @@
+% Figure: A* search with priority key f = g + h annotated on each node.
+\begin{tikzpicture}[nx,
+  nd/.style={draw,thick,rounded corners=2pt,fill=white,
+             font=\sffamily\scriptsize,align=center,
+             minimum width=2.0cm,minimum height=0.95cm,inner sep=3pt},
+  cut/.style={nd,draw=nxRed,fill=nxRedBg},
+  win/.style={nd,draw=nxGreen,fill=nxGreenBg,line width=1pt},
+  edge/.style={-{Latex[length=1.8mm]},nxGray,thick},
+  bold/.style={-{Latex[length=2.2mm]},nxGreen,line width=1.4pt},
+  side/.style={font=\sffamily\scriptsize\itshape,nxGray,anchor=east},
+]
+  % ---- depth labels (left) ----
+  \node[side] at (-6.4, 4.0) {root};
+  \node[side] at (-6.4, 2.4) {fix agent 1};
+  \node[side] at (-6.4, 0.8) {fix agent 2};
+  \node[side] at (-6.4,-0.8) {fix agent 3};
+  \node[side] at (-6.4,-2.4) {fix agent 4};
+
+  % ---- nodes with f = g + h ----
+  \node[nd]  (r)  at (0,4.0)
+        {\textbf{root}\\$f = 0{+}92 = 92$};
+  \node[nd]  (a1) at (-2.6,2.4)
+        {bid$\,b_1$\\$f = 25{+}65 = 90$};
+  \node[nd]  (a2) at ( 2.6,2.4)
+        {bid$\,b_2$\\$f = 22{+}65 = 87$};
+  \node[win] (b1) at (-3.8,0.8)
+        {bid$\,b_1$\\$f = 47{+}42 = 89$};
+  \node[cut] (b2) at (-1.2,0.8)
+        {bid$\,b_2$\\(cut)};
+  \node[nd]  (b3) at ( 2.6,0.8)
+        {bid$\,b_1$\\$f = 40{+}42 = 82$};
+  \node[win] (c1) at (-3.8,-0.8)
+        {bid$\,b_2$\\$f = 70{+}19 = 89$};
+  \node[win] (d1) at (-3.8,-2.4)
+        {bid$\,b_1$\\$f = 89{+}0 = \mathbf{89}$};
+
+  % ---- edges ----
+  \draw[edge] (r) -- (a2);  \draw[edge] (a2) -- (b3);
+  \draw[edge] (a1) -- (b2);
+  \draw[bold] (r) -- (a1);
+  \draw[bold] (a1) -- (b1);
+  \draw[bold] (b1) -- (c1);
+  \draw[bold] (c1) -- (d1);
+
+  % ---- × marker on the cut node ----
+  \node[nxRed,font=\footnotesize\bfseries]
+        at ([xshift=-3pt,yshift=-2pt]b2.north east) {$\times$};
+
+  % ---- annotations ----
+  \node[font=\sffamily\scriptsize\bfseries,nxGreen,align=left,anchor=west]
+        at (-2.7,-2.4) {first complete pop\\
+                        $f = g$ alone $\Rightarrow$\\
+                        global welfare max};
+
+  % ---- legend ----
+  \node[font=\sffamily\scriptsize,align=left,anchor=west] at (-6.3,-3.7)
+       {$g(p)$ = sum of bid utilities chosen so far;
+        $h(p) = \sum_{j > d}\max_{b\in B_j} u(b)$ = admissible upper bound on the remainder.};
+\end{tikzpicture}

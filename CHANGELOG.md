@@ -29,6 +29,66 @@ items both resolved.
 
 ---
 
+## 2026-05-26 — Chapter 4 (Implementation): first draft
+
+**WHAT.** First draft of Chapter 4 written from zero: 8 sections,
+~25 PDF pages, 8 native TikZ figures, 8 code listings.
+
+**WHY.** Per the drafting brief: Chapter 4 bridges Chapter 3
+(architecture) and Chapter 5 (results) by documenting how the
+architecture is realised as a runnable system; the chapter has been
+empty since the placeholder stub.
+
+**WHERE.**
+- `latex/chapters/04_implementation.tex` (new content) — full draft:
+  - 4.1 Overview (package-to-layer mapping, dependencies, determinism)
+  - 4.2 Worker Layer (\texttt{AgentV5} base, constraints/bids,
+    bid-generation, domain authority, four home agents)
+  - 4.3 Marketplace Layer (facade, A* mediator with admissible heuristic,
+    remediation hook, contract record / audit instrumentation)
+  - 4.4 Fence Layer (rule structure, default suite, audit streams)
+  - 4.5 Baselines (Siloed, RBC, CUSO, plus notes on dropped Sequential
+    and CNP)
+  - 4.6 Benchmark Instances (Brandimarte parser, synthetic generators,
+    DD-017 subclass pivot, synthetic-v2 features)
+  - 4.7 Simulation Framework (SimPy event loop, plant physics,
+    capacity-exhaustion path)
+  - 4.8 Testing Strategy (350-test suite organisation, representative
+    pattern, determinism substrate)
+  DDs surfaced (cited as DD-NNN in prose): DD-005, DD-006, DD-007,
+  DD-008, DD-009, DD-010, DD-012, DD-014, DD-017, DD-019, DD-021,
+  DD-026, DD-027, DD-030, DD-032, DD-033, DD-034.
+- `latex/figures/fig_impl_*.tex` (8 new TikZ files): packages,
+  bdi class+pipeline, A* with $f=g+h$, fence audit-stream topology,
+  baselines on (joint search, full info) axes, benchmark pipeline,
+  SimPy event loop, test-suite tree.
+- `latex/tikz-setup.tex` — `\providecommand` for `\NEXUS`, `\PSA`,
+  `\PMA`, `\QCA`, `\SCA` so standalone figure renders can use them;
+  `latex/preamble.tex` corresponding `\renewcommand`s for prose use.
+- Activated the `\cite{hart1968astar}` citation in Chapter 3 (the
+  earlier TODO).
+
+**Build status.** LaTeX clean: 68 pages total, Chapter 4 spans pages
+31--55 (25 PDF pages); 0 undefined citations, 0 undefined references,
+0 multiply-defined labels, 0 \emph{listings} warnings, no
+overfull-hbox lines reported. Word regenerated:
+`word/04_implementation.docx` (547 KB), all 8 figures embedded as PNG.
+
+**Notes.**
+- Page count (25) is below the 30--40 target in the brief; the chapter
+  is dense (8 code listings + 8 figures) and was kept tight rather
+  than padded with prose.
+- Three figure-rendering quirks were resolved while drafting:
+  (a) inline `\NEXUS` etc. needed to be provided in `tikz-setup.tex`
+  so standalone figure renders compile; (b) `cap` and `step` are
+  reserved TikZ keys, so the eventloop and lifecycle figures use
+  renamed style keys; (c) the `\S` UTF-8 glyph inside a `lstlisting`
+  was replaced by ASCII.
+- Listing labels in Chapter 4 use the `lst:impl-*` prefix so they
+  don't collide with Chapter 3's `lst:bid` / `lst:mediator`.
+
+---
+
 ## 2026-05-22 — Chapter 3 figure resizing + bibliography updates
 
 **WHAT.** Resized the Chapter 3 TikZ figures so they fill the text

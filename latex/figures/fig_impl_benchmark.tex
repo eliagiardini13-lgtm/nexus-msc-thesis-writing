@@ -1,0 +1,48 @@
+% Figure: benchmark + simulation pipeline.
+\begin{tikzpicture}[nx,
+  gen/.style={draw=nxBlue,thick,rounded corners=3pt,fill=nxBlueBg,
+              align=center,font=\sffamily\footnotesize,
+              minimum width=3.2cm,minimum height=0.95cm},
+  ds/.style={draw=nxGray,thick,rounded corners=3pt,fill=white,
+             align=center,font=\sffamily\footnotesize\ttfamily,
+             minimum width=2.6cm,minimum height=0.95cm},
+  envc/.style={draw=nxOrange,thick,rounded corners=3pt,fill=nxOrangeBg,
+               align=center,font=\sffamily\footnotesize,
+               minimum width=3.4cm,minimum height=0.95cm},
+  mech/.style={draw=nxRed,thick,rounded corners=3pt,fill=nxRedBg,
+               align=center,font=\sffamily\footnotesize,
+               minimum width=2.8cm,minimum height=0.95cm},
+  outc/.style={draw=nxGreen,thick,rounded corners=3pt,fill=nxGreenBg,
+               align=center,font=\sffamily\footnotesize,
+               minimum width=2.6cm,minimum height=0.95cm},
+  arr/.style={-{Latex[length=2.4mm]},thick,nxGray},
+]
+  % ---- generators (left column) ----
+  \node[gen] (br) at (-6.4, 1.8) {Brandimarte parser};
+  \node[gen] (sg1) at (-6.4, 0.6) {synthetic v1 generator};
+  \node[gen] (sg2) at (-6.4,-0.6) {synthetic v2 generator\\\nxsmall DD-019};
+
+  % ---- FJSPInstance (centre) ----
+  \node[ds] (fj) at (-2.0, 0.6) {FJSPInstance};
+
+  % ---- env (centre) ----
+  \node[envc] (env)  at (2.0, 1.4) {EnvironmentV5\\\nxsmall (SimPy)};
+  \node[envc] (env2) at (2.0,-0.2) {Synthetic v2 env\\\nxsmall subclass (DD-017)};
+
+  % ---- mechanism ----
+  \node[mech] (mch) at (6.4, 1.4) {Marketplace\\\nxsmall (\NEXUS{} / Siloed /\\RBC)};
+
+  % ---- outcomes ----
+  \node[outc] (out) at (6.4,-1.4) {ContractRecord\\$+$ Fence stream};
+
+  % ---- arrows ----
+  \draw[arr] (br)  -- (fj);
+  \draw[arr] (sg1) -- (fj);
+  \draw[arr] (sg2) -- (fj);
+  \draw[arr] (fj.east|-env)  -- (env.west);
+  \draw[arr] (fj.east|-env2) -- (env2.west);
+  \draw[arr] (env.east) -- node[above,font=\sffamily\scriptsize,nxRed]{\texttt{set\_mech}} (mch.west);
+  \draw[arr] (env2.east|-mch) -- (mch.west);
+  \draw[arr,nxOrange] (env.south)  -- ([yshift=-3pt]env.south|-out) -- (out.west|-out);
+  \draw[arr,nxRed]    (mch.south) -- (out);
+\end{tikzpicture}

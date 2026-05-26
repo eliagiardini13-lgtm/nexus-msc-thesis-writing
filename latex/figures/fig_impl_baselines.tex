@@ -1,0 +1,46 @@
+% Figure: four mechanism implementations on (joint search, full info) axes.
+\begin{tikzpicture}[nx,
+  ax/.style={-{Latex[length=2.4mm]},thick,nxGray},
+  mech/.style={draw,thick,rounded corners=4pt,align=center,
+               font=\sffamily\small\bfseries,
+               minimum width=2.6cm,minimum height=1.2cm},
+  note/.style={font=\sffamily\scriptsize\itshape,nxGray,align=center},
+]
+  % ---- axes (quadrant in [-1,7] x [-1,5]) ----
+  \draw[ax] (-0.5, 0) -- (7.5, 0) node[right,font=\sffamily\footnotesize,nxGray] {joint search};
+  \draw[ax] ( 0,-0.5) -- (0, 5.5) node[above,font=\sffamily\footnotesize,nxGray] {full information};
+  \node[font=\sffamily\scriptsize,nxGray] at (1.8,-0.4) {no};
+  \node[font=\sffamily\scriptsize,nxGray] at (5.4,-0.4) {yes};
+  \node[font=\sffamily\scriptsize,nxGray,rotate=90] at (-0.4,1.5) {no};
+  \node[font=\sffamily\scriptsize,nxGray,rotate=90] at (-0.4,4.0) {yes};
+
+  % ---- quadrant guide lines ----
+  \draw[nxGray,dashed,thick] (3.6,-0.3) -- (3.6,5.3);
+  \draw[nxGray,dashed,thick] (-0.3,2.6) -- (7.3,2.6);
+
+  % ---- mechanism boxes ----
+  \node[mech,fill=nxGrayBg,draw=nxGray,minimum width=1.55cm,
+        minimum height=1.05cm]
+        (sil) at (1.0, 1.2)
+        {Siloed\\\nxsmall (no coord.)};
+  \node[mech,fill=nxYellowBg,draw=nxYellow,minimum width=1.55cm,
+        minimum height=1.05cm]
+        (rbc) at (2.6, 1.2)
+        {RBC\\\nxsmall (static rules)};
+  \node[mech,fill=nxRedBg,draw=nxRed]     (nex) at (5.4, 1.4)
+        {\NEXUS{}\\\nxsmall (joint A*)};
+  \node[mech,fill=nxBlueBg,draw=nxBlue]   (cus) at (5.4, 4.0)
+        {CUSO\\\nxsmall (centralised\\ceiling)};
+
+  % ---- captions ----
+  \node[note] at (1.6,-0.95)
+        {independent\\per-dimension\\decisions};
+  \node[note] at (5.4,-0.95)
+        {search over\\bid combinations};
+  \node[note,rotate=90] at (-1.05,1.4)
+        {bid summaries\\only (DD-002)};
+  \node[note,rotate=90] at (-1.05,4.0)
+        {reads each agent's\\full utility};
+  \node[note,nxRed] at (5.4, 2.2)
+        {\textbf{bounded-disclosure}\\contribution};
+\end{tikzpicture}

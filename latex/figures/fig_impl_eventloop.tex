@@ -1,0 +1,50 @@
+% Figure: SimPy event loop for the v5 environment.
+\begin{tikzpicture}[nx,
+  ev/.style={draw,thick,rounded corners=3pt,fill=nxBlueBg,draw=nxBlue,
+             align=center,font=\sffamily\footnotesize,
+             minimum width=2.8cm,minimum height=0.95cm},
+  hub/.style={draw,thick,rounded corners=4pt,fill=nxGrayBg,draw=nxGray,
+              align=center,font=\sffamily\small\bfseries,
+              minimum width=3.2cm,minimum height=1.05cm},
+  mech/.style={draw,thick,rounded corners=3pt,fill=nxRedBg,draw=nxRed,
+               align=center,font=\sffamily\footnotesize,
+               minimum width=3.0cm,minimum height=0.95cm},
+  capb/.style={draw,thick,rounded corners=3pt,fill=nxOrangeBg,draw=nxOrange,
+              align=center,font=\sffamily\footnotesize,
+              minimum width=3.0cm,minimum height=0.95cm},
+  arr/.style={-{Latex[length=2.4mm]},thick,nxGray},
+  loop/.style={-{Latex[length=2.4mm]},thick,nxBlue,dashed},
+]
+  % ---- main loop hub ----
+  \node[hub] (hub) at (0,0) {SimPy main loop\\\nxsmall env.run()};
+
+  % ---- event categories around the hub ----
+  \node[ev]  (arr1) at (-4.7, 2.0) {Job arrival\\\nxsmall (Poisson)};
+  \node[ev]  (ops)  at (-4.7,-2.0) {Operation start\\/ end};
+  \node[ev]  (conf) at ( 4.7, 2.0) {Conflict\\detected};
+
+  % ---- mechanism path ----
+  \node[mech] (mc) at ( 4.7,-0.5) {mechanism(conflict, env)};
+  \node[capb]  (ap) at ( 4.7,-2.2) {apply\_contract\\\nxsmall (project onto plant)};
+
+  % ---- capacity exhaustion path ----
+  \node[capb,minimum width=3.4cm] (rm) at ( 0.0,-3.5)
+        {capacity exhausted?\\\nxsmall remediate (DD-027)};
+
+  % ---- arrows ----
+  \draw[arr] (hub.north west) to[bend right=10] (arr1);
+  \draw[arr] (hub.south west) to[bend left=10]  (ops);
+  \draw[arr] (hub.north east) to[bend left=10]  (conf);
+  \draw[loop] (arr1) to[bend right=20] node[above,nxsmall,nxBlue]{schedule first op} (hub);
+  \draw[loop] (ops)  to[bend left=20]  node[below,nxsmall,nxBlue]{advance state}    (hub);
+
+  \draw[arr,nxRed]  (conf) -- (mc);
+  \draw[arr,nxRed]  (mc) -- node[right,nxsmall,nxRed]{Contract / FAILED} (ap);
+  \draw[arr,nxOrange] (ap.south) |- node[right,nxsmall,nxOrange,pos=0.25]{exhausted} (rm.east);
+  \draw[arr,nxOrange] (rm.north) -- node[right,nxsmall,nxOrange,align=left]{remediated\\contract} (hub.south);
+  \draw[arr,nxBlue] (ap.east) -- ++(0.55,0) |- (hub.east);
+
+  % ---- annotation ----
+  \node[font=\sffamily\scriptsize\itshape,nxGray,align=center]
+        at (0,3.0) {three event families dispatched in time order};
+\end{tikzpicture}

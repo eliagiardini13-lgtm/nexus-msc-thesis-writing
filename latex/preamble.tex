@@ -147,9 +147,12 @@
     \label{#1}
   \end{figure}}
 
-% Inline shortcuts for the four BDI agents.
-\newcommand{\PSA}{\textsc{psa}}
-\newcommand{\PMA}{\textsc{pma}}
-\newcommand{\QCA}{\textsc{qca}}
-\newcommand{\SCA}{\textsc{sca}}
-\newcommand{\NEXUS}{\textsc{nexus}}
+% Inline shortcuts for the four BDI agents. \renewcommand because
+% tikz-setup.tex \provides the same names with plain-text expansions so
+% standalone figure renders can use them; in the main build the prose
+% version below overrides those defaults with smallcaps.
+\renewcommand{\PSA}{\textsc{psa}}
+\renewcommand{\PMA}{\textsc{pma}}
+\renewcommand{\QCA}{\textsc{qca}}
+\renewcommand{\SCA}{\textsc{sca}}
+\renewcommand{\NEXUS}{\textsc{nexus}}

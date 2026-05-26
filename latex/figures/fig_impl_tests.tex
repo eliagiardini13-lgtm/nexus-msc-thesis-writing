@@ -1,0 +1,52 @@
+% Figure: test-suite organisation (350 tests in 29 pytest modules).
+\begin{tikzpicture}[nx,
+  cat/.style={draw,thick,rounded corners=3pt,align=center,
+              font=\sffamily\footnotesize\bfseries,
+              minimum width=3.4cm,minimum height=0.85cm,inner sep=4pt},
+  mod/.style={draw=nxGray,thick,rounded corners=2pt,fill=white,
+              font=\sffamily\scriptsize\ttfamily,align=left,
+              minimum width=4.0cm,minimum height=0.55cm,inner sep=3pt},
+  root/.style={draw,thick,rounded corners=4pt,fill=nxGrayBg,draw=nxGray,
+               align=center,font=\sffamily\small\bfseries,
+               minimum width=5.0cm,minimum height=1.0cm},
+  edge/.style={-{Latex[length=1.8mm]},thick,nxGray},
+]
+  % ---- root ----
+  \node[root] (r) at (0,4.3) {tests/  ---  29 modules, 350 tests};
+
+  % ---- categories (5) ----
+  \node[cat,fill=nxBlueBg,draw=nxBlue]    (uc) at (-7.0, 2.4) {Core unit};
+  \node[cat,fill=nxGreenBg,draw=nxGreen]  (cmp) at (-3.5, 2.4) {Per-component};
+  \node[cat,fill=nxOrangeBg,draw=nxOrange](inv) at ( 0.0, 2.4) {Property-based};
+  \node[cat,fill=nxYellowBg,draw=nxYellow](bnc) at ( 3.5, 2.4) {Benchmark};
+  \node[cat,fill=nxRedBg,draw=nxRed]      (itg) at ( 7.0, 2.4) {Integration};
+
+  % ---- modules per category ----
+  \node[mod] (uc1) at (-7.0, 1.2) {test\_constraint.py};
+  \node[mod] (uc2) at (-7.0, 0.55) {test\_bid.py};
+  \node[mod] (uc3) at (-7.0,-0.10) {test\_contract.py};
+  \node[mod] (uc4) at (-7.0,-0.75) {test\_fence.py};
+
+  \node[mod] (c1) at (-3.5, 1.2)  {test\_agent\_\{base,psa,\dots\}};
+  \node[mod] (c2) at (-3.5, 0.55) {test\_mediator.py};
+  \node[mod] (c3) at (-3.5,-0.10) {test\_marketplace.py};
+  \node[mod] (c4) at (-3.5,-0.75) {test\_baseline\_\{cnp,rbc,\dots\}};
+  \node[mod] (c5) at (-3.5,-1.40) {test\_cuso\_disclosure.py};
+
+  \node[mod] (i1) at ( 0.0, 1.2) {test\_determinism.py};
+  \node[mod] (i2) at ( 0.0, 0.55) {test\_agent\_utility\_for\_contract};
+  \node[mod] (i3) at ( 0.0,-0.10) {test\_env\_explicit\_failed};
+  \node[mod] (i4) at ( 0.0,-0.75) {test\_dd\_v5\_023\_extensions};
+
+  \node[mod] (b1) at ( 3.5, 1.2)  {test\_synthetic\_generator};
+  \node[mod] (b2) at ( 3.5, 0.55) {test\_synthetic\_subclasses};
+  \node[mod] (b3) at ( 3.5,-0.10) {test\_synthetic\_v2\_\{gen,env,agt\}};
+  \node[mod] (b4) at ( 3.5,-0.75) {test\_industrial\_automotive};
+
+  \node[mod] (g1) at ( 7.0, 1.2)  {test\_integration\_mk06.py};
+  \node[mod] (g2) at ( 7.0, 0.55) {test\_environment\_v5.py};
+  \node[mod] (g3) at ( 7.0,-0.10) {test\_synthetic\_v2\_environment};
+
+  % ---- edges ----
+  \foreach \c in {uc,cmp,inv,bnc,itg}{\draw[edge] (r) -- (\c);}
+\end{tikzpicture}

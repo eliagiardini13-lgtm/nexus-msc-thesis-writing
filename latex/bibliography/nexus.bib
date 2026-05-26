@@ -1,1 +1,2079 @@
-../../../Bibliography/nexus.bib
+% ============================================================
+%  nexus.bib — NEXUS Thesis Bibliography
+%  Elia Giardini | Politecnico di Torino / Beihang | 2026
+%
+%  USAGE:
+%    \usepackage{cite}
+%    \bibliographystyle{ieeetr}
+%    \bibliography{../bibliography/nexus}
+%
+%  STRUCTURE (Option B — by technical topic):
+%    1. Agent Paradigms & Negotiation
+%    2. MAS in Manufacturing
+%    3. FJSP & Scheduling
+%    4. Coordination Mechanisms (CNP / DCOP / Auction)
+%    5. Safety — Shielding & Alternatives
+%    6. Continual Learning
+%    7. Gap Evidence & Competitors
+%    8. Benchmarks & Evaluation Methodology
+%
+%  STATUS LEGEND:
+%    [READ]     — paper read and annotated
+%    [PARTIAL]  — partially read
+%    [ABSTRACT] — abstract only
+%    [CITED]    — cited but not read
+% ============================================================
+
+
+% ============================================================
+%  1. AGENT PARADIGMS & NEGOTIATION
+% ============================================================
+
+% [READ] — BDI model: agents as Belief-Desire-Intention systems;
+%          foundational formal model for goal-directed autonomous agents.
+%          Use: theoretical basis for redesigning NEXUS agents as BDI agents
+%               (Beliefs = sensor readings, Desires = functional objectives,
+%                Intentions = bid decisions committed to Marketplace)
+@inproceedings{rao1995bdi,
+  author    = {Rao, Anand S. and Georgeff, Michael P.},
+  title     = {{BDI} Agents: From Theory to Practice},
+  booktitle = {Proceedings of the First International Conference
+               on Multi-Agent Systems (ICMAS-95)},
+  pages     = {312--319},
+  year      = {1995}
+}
+
+% [READ] — most recent systematic survey of BDI architectures and languages;
+%          covers deliberation cycle, belief revision, intention scheduling.
+%          Use: cite when describing how NEXUS BDI agents deliberate at each
+%               ConflictEvent — maps the NEXUS bid cycle to BDI deliberation cycle
+@inproceedings{desilva2020bdi,
+  author    = {de Silva, Lavindra and Meneguzzi, Felipe and Logan, Brian},
+  title     = {{BDI} Agent Architectures: {A} Survey},
+  booktitle = {Proceedings of the 29th International Joint Conference on
+               Artificial Intelligence (IJCAI-20)},
+  year      = {2020},
+  pages     = {4914--4921},
+  doi       = {10.24963/ijcai.2020/684}
+}
+
+% [READ] — BDI agents applied to holonic manufacturing systems (HMS);
+%          uses BDI for deliberative phase of holonic agents in FJSP context.
+%          Use: direct application of BDI in manufacturing scheduling —
+%               validates the BDI redesign of NEXUS agents in the PROSA tradition
+@article{leitao2015hapba,
+  author  = {Leit{\~{a}}o, Paulo and Restivo, Francisco and Barbosa, Jose},
+  title   = {{HAPBA}: a Holonic Adaptive Plan-Based Architecture},
+  journal = {IFAC-PapersOnLine},
+  year    = {2015},
+  volume  = {48},
+  number  = {3},
+  pages   = {2149--2154},
+  doi     = {10.1016/j.ifacol.2015.06.408}
+}
+
+% [READ] — canonical agent definition: autonomous, reactive, proactive, social
+%          Use: theoretical foundation for the NEXUS agent model
+@article{wooldridge1995,
+  author  = {Wooldridge, Michael and Jennings, Nicholas R.},
+  title   = {Intelligent agents: Theory and practice},
+  journal = {The Knowledge Engineering Review},
+  year    = {1995},
+  volume  = {10},
+  number  = {2},
+  pages   = {115--152},
+  doi     = {10.1017/S0269888900008122}
+}
+
+% [READ] — original CNP: ANNOUNCE → BID → AWARD protocol
+%          Use: CNP formal foundation; justifies the NEXUS Marketplace protocol
+@article{smith1980,
+  author  = {Smith, Reid G.},
+  title   = {The contract net protocol: High-level communication and
+             control in a distributed problem solver},
+  journal = {IEEE Transactions on Computers},
+  year    = {1980},
+  volume  = {29},
+  number  = {12},
+  pages   = {1104--1113},
+  doi     = {10.1109/TC.1980.1675516}
+}
+
+% [READ] — canonical MAS overview: defines negotiation among agents with
+%          divergent interests as a fundamental mechanism
+%          Use: theoretical framing for MANS paradigm in NEXUS
+@article{sycara1998mas,
+  author  = {Sycara, Katia P.},
+  title   = {Multiagent Systems},
+  journal = {AI Magazine},
+  year    = {1998},
+  volume  = {19},
+  number  = {2},
+  pages   = {79--92},
+  doi     = {10.1609/aimag.v19i2.1370}
+}
+
+% [READ] — strategic negotiation model for agents with potentially
+%          conflicting interests
+%          Use: utility-grounded negotiation foundation for NEXUS
+@article{kraus1993,
+  author  = {Kraus, Sarit and Wilkenfeld, Jonathan},
+  title   = {A Strategic Negotiations Model with Applications to
+             an International Crisis},
+  journal = {IEEE Transactions on Systems, Man, and Cybernetics},
+  year    = {1993},
+  volume  = {23},
+  number  = {1},
+  pages   = {313--323},
+  doi     = {10.1109/21.214793}
+}
+
+% [READ] — foundational text on automated negotiation: interaction protocols
+%          for agents with divergent goals (Worth Oriented Domains — exactly
+%          the NEXUS scenario)
+%          Use: justifies CNP as the correct protocol for divergent utility agents
+@book{rosenschein1994,
+  author    = {Rosenschein, Jeffrey S. and Zlotkin, Gilad},
+  title     = {Rules of Encounter: Designing Conventions for Automated
+               Negotiation among Computers},
+  publisher = {MIT Press},
+  address   = {Cambridge, MA},
+  year      = {1994},
+  isbn      = {0262181592}
+}
+
+% [CITED] — foundational textbook on MAS: utility theory, mechanism design,
+%           auction theory, CNP formalization, game-theoretic foundations.
+%           ISBN 978-0-521-89943-7. Freely available at masfoundations.org.
+%           Use: theoretical foundation for utility-grounded bidding in NEXUS
+%                Marketplace; cite when defining agent utility functions (Ch. 3)
+@book{shoham2009mas,
+  author    = {Shoham, Yoav and Leyton-Brown, Kevin},
+  title     = {Multiagent Systems: Algorithmic, Game-Theoretic,
+               and Logical Foundations},
+  publisher = {Cambridge University Press},
+  address   = {Cambridge, UK},
+  year      = {2009},
+  isbn      = {9780521899437},
+  url       = {https://www.masfoundations.org}
+}
+
+% [CITED] — CNP empirical validation in heterarchical FMS scheduling
+%           Use: direct empirical support for CNP in manufacturing (RQ1)
+@article{deen1997cnp,
+  author  = {Deen, S. M.},
+  title   = {Performance Evaluation of Contract Net-Based Heterarchical
+             Scheduling for Flexible Manufacturing Systems},
+  journal = {Intelligent Automation and Soft Computing},
+  year    = {1997},
+  volume  = {3},
+  number  = {2},
+  pages   = {105--116},
+  doi     = {10.1080/10798587.1997.10750705}
+}
+
+% [CITED] — multi-contract CNP extension for dynamic FMS
+%           Use: shows CNP evolvability — counter-argument to rigidity critique
+@inproceedings{kim1999multicontract,
+  author    = {Kim, Y. K. and Kim, J. Y. and Kim, Y.},
+  title     = {A Multi-Contract Net Protocol for Dynamic Scheduling
+               in Flexible Manufacturing Systems},
+  booktitle = {Proceedings 1999 IEEE International Conference on
+               Robotics and Automation (ICRA)},
+  year      = {1999},
+  doi       = {10.1109/ROBOT.1999.772469}
+}
+
+% [CITED] — canonical survey on market-based vs CNP vs auction for multi-robot
+%           Use: systematic comparison CNP vs auction — supports RQ1
+@article{dias2006marketbased,
+  author  = {Dias, M. Bernardine and Zlot, Robert and Kalra, Nidhi and Stentz, Anthony},
+  title   = {Market-Based Multirobot Coordination: A Survey and Analysis},
+  journal = {Proceedings of the IEEE},
+  year    = {2006},
+  volume  = {94},
+  number  = {7},
+  pages   = {1257--1270},
+  doi     = {10.1109/jproc.2006.876939}
+}
+
+
+% [ABSTRACT] — foundational bilateral negotiation tactics: time-dependent,
+%              resource-dependent, and imitative concession functions.
+%              Defines the "negotiation decision function" concept used in
+%              almost all subsequent automated negotiation work.
+%              Limit: single-issue / bilateral; no multi-party or multi-objective.
+%              Use: Chapter 2 — cite as origin of utility-based concession
+%              functions; NEXUS extends this to multi-party CNP with 4 agents
+@article{faratin1998negotiation,
+  author  = {Faratin, Peyman and Sierra, Carles and Jennings, Nicholas R.},
+  title   = {Negotiation Decision Functions for Autonomous Agents},
+  journal = {Robotics and Autonomous Systems},
+  year    = {1998},
+  volume  = {24},
+  number  = {3--4},
+  pages   = {159--182},
+  doi     = {10.1016/S0921-8890(98)00029-3}
+}
+
+% [ABSTRACT] — introduces negotiation over nonlinear utility spaces via
+%              annealing mediator: agents sample utility space, mediator
+%              finds high-social-welfare contracts by simulated annealing.
+%              Foundational paper for Klein-Ito line of work on complex contracts.
+%              Limit: centralized mediator required; bilateral focus;
+%              no manufacturing application.
+%              Use: Chapter 2 — cite as co-foundation of utility-space
+%              negotiation; NEXUS Marketplace replaces annealing mediator
+%              with CNP protocol for real-time industrial response
+@article{klein2003negotiating,
+  author  = {Klein, Mark and Faratin, Peyman and Sayama, Hiroki and Bar-Yam, Yaneer},
+  title   = {Negotiating Complex Contracts},
+  journal = {Group Decision and Negotiation},
+  year    = {2003},
+  volume  = {12},
+  number  = {2},
+  pages   = {111--125},
+  doi     = {10.1023/A:1023068821218}
+}
+
+% [ABSTRACT] — IJCAI-07 core paper: bidding-based protocol for agents with
+%              nonlinear interdependent utility functions. Mediator collects
+%              bids (sampled utility points) from each agent and finds the
+%              combination maximizing social welfare. Formally analyzed.
+%              Limit: centralized mediator; static utility functions;
+%              full bid disclosure (privacy concern); scales poorly with
+%              number of agents beyond ~4.
+%              Use: Chapter 2 — NEXUS Marketplace DIRECTLY addresses the
+%              two main limitations: replaces mediator with CNP, and uses
+%              event-triggered bidding instead of global sampling
+@inproceedings{ito2007multiissue,
+  author    = {Ito, Takayuki and Hattori, Hiromitsu and Klein, Mark},
+  title     = {Multi-Issue Negotiation Protocol for Agents: Exploring
+               Nonlinear Utility Spaces},
+  booktitle = {Proceedings of the 20th International Joint Conference on
+               Artificial Intelligence (IJCAI-07)},
+  year      = {2007},
+  pages     = {1347--1352},
+  doi       = {N/A}
+}
+
+% [ABSTRACT] — extends Ito 2007 via "iterative narrowing": agents first
+%              narrow the negotiation space collaboratively before bidding,
+%              reducing computational cost for many-issue cases. Specifically
+%              proposed for multi-party settings.
+%              Use: Chapter 6 (future work) — cite as extension direction
+%              for NEXUS Marketplace scalability; DD-V5-006 references this
+@inproceedings{hattori2007narrowing,
+  author    = {Hattori, Hiromitsu and Klein, Mark and Ito, Takayuki},
+  title     = {Using Iterative Narrowing to Enable Multi-Party Negotiations
+               with Multiple Interdependent Issues},
+  booktitle = {Proceedings of the 6th International Joint Conference on
+               Autonomous Agents and Multiagent Systems (AAMAS-07)},
+  year      = {2007},
+  doi       = {10.1145/1329125.1329424}
+}
+
+% [ABSTRACT] — GPGP: framework for designing coordination algorithms as
+%              task-structure-aware relationships between agents. Agents
+%              coordinate by communicating about tasks they can help with
+%              (enables/facilitates/hinders). Precursor to CNP-style
+%              cooperative task allocation.
+%              Limit: requires shared task model; not utility-grounded;
+%              no multi-objective formulation.
+%              Use: Chapter 2 — cite as alternative coordination paradigm
+%              (task-structure-based vs. NEXUS utility-based); positions
+%              NEXUS in the coordination mechanism taxonomy
+@article{decker1995gpgp,
+  author  = {Decker, Keith S. and Lesser, Victor R.},
+  title   = {Designing a Family of Coordination Algorithms},
+  journal = {Proceedings of the First International Conference on
+             Multi-Agent Systems (ICMAS-95)},
+  year    = {1995},
+  pages   = {73--80},
+  doi     = {N/A}
+}
+
+% [ABSTRACT] — argumentation-based negotiation survey: agents exchange
+%              arguments (justifications, threats, rewards) rather than
+%              numeric bids. Advocates argument exchange when utility
+%              rationality assumptions fail.
+%              Limit: no quantitative utility model; not applicable to
+%              real-time industrial scheduling.
+%              Use: Chapter 2 — cite to contrast with NEXUS utility-grounded
+%              approach; "NEXUS assumes rational utility-maximizing agents,
+%              unlike argumentation-based approaches (Rahwan et al., 2003)"
+@article{rahwan2003argumentation,
+  author  = {Rahwan, Iyad and Ramchurn, Sarvapali D. and Jennings, Nicholas R.
+             and McBurney, Peter and Parsons, Simon and Sonenberg, Liz},
+  title   = {Argumentation-Based Negotiation},
+  journal = {The Knowledge Engineering Review},
+  year    = {2003},
+  volume  = {18},
+  number  = {4},
+  pages   = {343--375},
+  doi     = {10.1017/S0269888904000098}
+}
+
+% ============================================================
+%  2. MAS IN MANUFACTURING
+% ============================================================
+
+% [READ] — MAS in manufacturing: agent-based control, historical overview
+%          Use: background Chapter 2; canonical reference for MAS manufacturing
+@article{monostori2006,
+  author  = {Monostori, L. and V{\'{a}}ncza, J. and Kumara, S. R. T.},
+  title   = {Agent-based systems for manufacturing},
+  journal = {CIRP Annals},
+  year    = {2006},
+  volume  = {55},
+  number  = {2},
+  pages   = {697--720},
+  doi     = {10.1016/j.cirp.2006.10.004}
+}
+
+% [READ] — foundational PROSA reference architecture: Product, Resource, Order,
+%          Staff holons. Introduces the concept of reference architecture for MAS.
+%          Use: Chapter 3 — NEXUS positioned in the PROSA tradition
+@article{vanbrussel1998prosa,
+  author  = {Van Brussel, Hendrik and Wyns, Jo and Valckenaers, Paul
+             and Bongaerts, Luc and Peeters, Patrick},
+  title   = {Reference Architecture for Holonic Manufacturing Systems:
+             {PROSA}},
+  journal = {Computers in Industry},
+  year    = {1998},
+  volume  = {37},
+  number  = {3},
+  pages   = {255--274},
+  doi     = {10.1016/S0166-3615(98)00102-X}
+}
+
+% [READ] — survey on MAS distributed manufacturing control; covers holonic
+%          systems, PROSA extensions, agent coordination in production
+%          Use: Chapter 2 literature review — historical coverage of MAS manufacturing
+@article{leitao2009survey,
+  author  = {Leit{\~{a}}o, Paulo},
+  title   = {Agent-Based Distributed Manufacturing Control:
+             A State-of-the-Art Survey},
+  journal = {Engineering Applications of Artificial Intelligence},
+  year    = {2009},
+  volume  = {22},
+  number  = {7},
+  pages   = {979--991},
+  doi     = {10.1016/j.engappai.2008.09.005}
+}
+
+% [READ] — holonic scheduling: nervousness, temporal myopia, cyber-security
+%          not addressed — key gap for NEXUS
+%          Use: gap evidence for holonic limitations
+@article{derigent2020,
+  author  = {Derigent, William and Cardin, Olivier and Trentesaux, Damien},
+  title   = {Industry 4.0: Contributions of holonic manufacturing control
+             architectures and future challenges},
+  journal = {Journal of Intelligent Manufacturing},
+  year    = {2021},
+  volume  = {32},
+  number  = {5},
+  pages   = {1121--1137},
+  doi     = {10.1007/s10845-020-01704-7}
+}
+
+% [READ] — holonic approach to dynamic manufacturing scheduling
+%          Use: background holonic MAS — complements monostori2006
+@article{leitao2007holonic,
+  author  = {Leit{\~{a}}o, Paulo and Restivo, Francisco},
+  title   = {A Holonic Approach to Dynamic Manufacturing Scheduling},
+  journal = {Robotics and Computer-Integrated Manufacturing},
+  year    = {2007},
+  volume  = {24},
+  number  = {5},
+  pages   = {625--634},
+  doi     = {10.1016/j.rcim.2007.09.005}
+}
+
+% [READ] — updated review of MAS applications in intelligent manufacturing:
+%          scheduling, process planning, supply chain, quality control
+%          Use: Chapter 2 — evidence that MAS covers 4 functions separately
+%               but not in a unified cross-functional manner (gap evidence)
+@article{shen2006mas,
+  author  = {Shen, Weiming and Hao, Qi and Yoon, Hyun Joong
+             and Norrie, Douglas H.},
+  title   = {Applications of Agent-Based Systems in Intelligent
+             Manufacturing: An Updated Review},
+  journal = {Advanced Engineering Informatics},
+  year    = {2006},
+  volume  = {20},
+  number  = {4},
+  pages   = {415--431},
+  doi     = {10.1016/j.aei.2006.05.004}
+}
+
+% [READ] — systematic review of MAS for smart manufacturing with SWOT:
+%          safety unvalidated, negotiation rules hand-coded, TRL < 6
+%          Use: gap evidence against existing MAS manufacturing systems
+@article{pulikottil2023,
+  author  = {Pulikottil, Tilak and others},
+  title   = {Multi-agent systems for smart manufacturing: A systematic
+             review with {SWOT} analysis},
+  journal = {International Journal of Advanced Manufacturing Technology},
+  year    = {2023},
+  volume  = {124},
+  pages   = {1--18},
+  doi     = {10.1007/s00170-022-10553-5}
+}
+
+% [ABSTRACT] — MAS4AI framework for human-centered agile smart manufacturing;
+%              human-in-the-loop, AAS for agent description
+%              Use: application context for MAS manufacturing with human workers
+@article{wagner2023,
+  author  = {Wagner, Andreas and Sidorenko, Aleksandr and Alexopoulos, Kosmas and
+             van Bekkum, Monique and Nikolakis, Nikolaos and Motsch, William},
+  title   = {The {MAS4AI} framework for human-centered agile and smart manufacturing},
+  journal = {Frontiers in Artificial Intelligence},
+  year    = {2023},
+  volume  = {6},
+  pages   = {1241522},
+  doi     = {10.3389/frai.2023.1241522}
+}
+
+% [ABSTRACT] — MAS for reconfigurability of industrial assembly systems:
+%              plug-in/out resources, dynamic capability aggregation
+%              Use: MAS manufacturing for high-product-variety systems
+@article{rocha2017,
+  author  = {Rocha, Ant{\'{o}}nio and Castro, Elkin and Barata, Jos{\'{e}} and
+             de Silva, Lavindra and Antzoulatos, Nikolas and Ratchev, Svetan},
+  title   = {A multi-agent framework for capability-based reconfiguration of
+             industrial assembly systems},
+  journal = {International Journal of Production Research},
+  year    = {2017},
+  volume  = {56},
+  number  = {3},
+  pages   = {1316--1330},
+  doi     = {10.1080/00207543.2016.1243268}
+}
+
+% [ABSTRACT] — survey on MAS manufacturing: current trends and open challenges
+@inproceedings{rehman2021,
+  author    = {Rehman, Muhammad Habib Ur and others},
+  title     = {Multi-agent based manufacturing: current trends and challenges},
+  booktitle = {Proceedings of the 26th IEEE International Conference on
+               Emerging Technologies and Factory Automation (ETFA)},
+  year      = {2021},
+  pages     = {1--8},
+  doi       = {10.1109/ETFA45728.2021.9613555}
+}
+
+% [READ] — comprehensive review of agent technologies in smart manufacturing:
+%          historical evolution, architectures (holonic, CNP, MARL), edge-cloud
+%          deployment. Gap: cross-functional coordination layer not addressed.
+%          Use: motivate the NEXUS gap + survey of alternative architectures
+@article{hu2026,
+  author  = {Hu, Kun and Yao, Xifan and Qiao, Fei},
+  title   = {Agent technologies in smart manufacturing: {A} comprehensive
+             review of evolution, architectures, and edge--cloud deployment},
+  journal = {Advanced Engineering Informatics},
+  year    = {2026},
+  volume  = {70},
+  pages   = {104235},
+  doi     = {10.1016/j.aei.2025.104235}
+}
+
+% [ABSTRACT] — MAS as key enabler for Industrial Cyber-Physical Systems;
+%              survey of agent applications in Industry 4.0
+%              Use: Industry 4.0 context to motivate NEXUS
+@article{leitao2020cps,
+  author  = {Leit{\~{a}}o, Paulo and Colombo, Armando Walter and
+             Karnouskos, Stamatis and Ribeiro, Luis},
+  title   = {Industrial Agents as a Key Enabler for Realizing Industrial
+             Cyber-Physical Systems: Multiagent Systems Entering {Industry 4.0}},
+  journal = {IEEE Industrial Electronics Magazine},
+  year    = {2020},
+  volume  = {14},
+  number  = {3},
+  pages   = {18--32},
+  doi     = {10.1109/MIE.2019.2962225}
+}
+
+% [ABSTRACT] — MAS as enabler for Industry 4.0 components;
+%              cited in abstract and introduction for MAS manufacturing gap
+@inproceedings{leitao2020,
+  author    = {Sakurada, Lucas and Leit{\~{a}}o, Paulo},
+  title     = {Multi-Agent Systems to Implement Industry 4.0 Components},
+  booktitle = {Proceedings of the 2020 IEEE International Conference on
+               Industrial Cyber-Physical Systems (ICPS)},
+  year      = {2020},
+  pages     = {21--26},
+  doi       = {10.1109/ICPS48405.2020.9274745}
+}
+
+% [ABSTRACT] — Digital Twin + CPS framework for Industry 4.0;
+%              Use: motivation section of Introduction
+@article{tao2019,
+  author  = {Tao, Fei and Qi, Qinglin and Wang, Lihui and Nee, A. Y. C.},
+  title   = {Digital Twins and Cyber--Physical Systems toward Smart Manufacturing
+             and Industry 4.0: Correlation and Comparison},
+  journal = {Engineering},
+  year    = {2019},
+  volume  = {5},
+  number  = {4},
+  pages   = {653--661},
+  doi     = {10.1016/J.ENG.2019.01.014}
+}
+
+% [ABSTRACT] — distributed dynamic scheduling for Cyber-Physical Production
+%              Systems based on MAS
+%              Use: CPS + MAS context — complements leitao2020cps for RQ2
+@article{zheng2017cps,
+  author  = {Zheng, Pai and Sang, Zhiqian and Zhong, Ray Y. and Liu, Yan and
+             Liu, Chao and Mubarok, Khamdi and Yu, Shiqiang and Xu, Xun},
+  title   = {Distributed Dynamic Scheduling for Cyber-Physical Production
+             Systems Based on a Multi-Agent System},
+  journal = {IEEE Access},
+  year    = {2017},
+  volume  = {5},
+  pages   = {26880--26892},
+  doi     = {10.1109/access.2017.2780321}
+}
+
+% [CITED] — ISA-95 / IEC 62264 international standard for enterprise-control
+%           system integration. Defines the 5-layer hierarchy (Level 0-4)
+%           and the Level 3 Manufacturing Operations Management domain
+%           where NEXUS is positioned.
+%           Use: cite when positioning NEXUS at ISA-95 Level 3 (Ch. 1 and Ch. 3)
+@techreport{isa95part1,
+  author      = {{ISA Standards Committee}},
+  title       = {{ANSI/ISA-95.00.01}: Enterprise-Control System Integration ---
+                 Part 1: Models and Terminology},
+  institution = {International Society of Automation (ISA)},
+  year        = {2010},
+  type        = {Standard},
+  note        = {Also published as IEC 62264-1}
+}
+
+
+% [ABSTRACT] — NIST/IFAC requirements analysis for integrated ISA-95 Level 3
+%              decision-making across the four functional domains: production
+%              scheduling, quality management, maintenance, and inventory.
+%              Explicitly identifies the coordination gap between these four
+%              pillars and frames it as an open research challenge. Does NOT
+%              provide a computational solution or baseline algorithm.
+%              Use: (1) Chapter 1 — authoritative NIST source identifying the
+%                   exact gap NEXUS addresses; cite as: "Sprock et al. (2019)
+%                   identify cross-functional ISA-95 coordination as an open
+%                   research challenge"; (2) justifies why no validated
+%                   centralized 4-domain baseline exists in literature
+@article{sprock2019isa95,
+  author  = {Sprock, Timothy and Bock, Conrad and Stouffer, Keith and
+             Steves, Michelle and Pollard, Karl and Witherell, Paul},
+  title   = {Challenges in Integrating {ISA-95} Levels 3 and 4},
+  journal = {IFAC-PapersOnLine},
+  year    = {2019},
+  volume  = {52},
+  number  = {13},
+  pages   = {2494--2499},
+  doi     = {10.1016/j.ifacol.2019.11.466}
+}
+
+% ============================================================
+%  2b. MACHINE CRITICALITY & EQUIPMENT HIERARCHY
+% ============================================================
+
+% [ABSTRACT] — Molenaers, Baets, Pintelon & Waeyenbergh 2012 (IJPE):
+%              Empirical framework for ABC+FMEA criticality classification
+%              of machines and spare parts in a real manufacturing plant.
+%              Key finding: top 20% of machines generate 80% of downtime
+%              (Pareto). Provides operational definition of A/B/C criticality
+%              levels used in industrial MES/CMMS systems.
+%              Use: Chapter 3 / DD-V5-015 — cite when introducing
+%              bottleneck_count and machine criticality weights; provides
+%              industrial basis for ABC criticality parameterization
+%              in synthetic benchmark generator
+@article{molenaers2012criticality,
+  author  = {Molenaers, An and Baets, Herbert and Pintelon, Liliane
+             and Waeyenbergh, Geert},
+  title   = {Criticality Classification of Spare Parts: A Case Study},
+  journal = {International Journal of Production Economics},
+  year    = {2012},
+  volume  = {140},
+  number  = {2},
+  pages   = {570--578},
+  doi     = {10.1016/j.ijpe.2011.08.013}
+}
+
+% [ABSTRACT] — Leukel, González & Sutschet 2021 (JMS):
+%              Review of how MES/ISA-95 Level 3 systems integrate condition
+%              monitoring with production scheduling. Case studies across
+%              4 automotive plants. Identifies machine criticality as a
+%              missing variable in current scheduling models: current
+%              approaches treat all machines as equally schedulable.
+%              Use: Chapter 2 / Chapter 3 — cite when grounding NEXUS in
+%              ISA-95 Level 3; confirms that criticality-aware scheduling
+%              is absent from standard MES implementations and therefore
+%              represents a genuine contribution of NEXUS architecture
+@article{leukel2021condition,
+  author  = {Leukel, J\"org and Gonz\'{a}lez, Jes\'{u}s and
+             Sutschet, Mark},
+  title   = {Integrating Condition Monitoring and Scheduling in
+             Manufacturing: A Literature Review and Analysis},
+  journal = {Journal of Manufacturing Systems},
+  year    = {2021},
+  volume  = {61},
+  pages   = {923--934},
+  doi     = {10.1016/j.jmsy.2021.01.005}
+}
+
+% ============================================================
+%  3. FJSP & SCHEDULING
+% ============================================================
+
+% [READ] — distributed production control: taxonomy of control architectures
+%          (heterarchical, hierarchical, hybrid); shows that fully
+%          heterarchical systems without explicit coordination protocols
+%          produce emergent conflicts and suboptimal global performance.
+%          Use: cite in Chapter 2 to establish that distributed control
+%               without a structured coordination layer leads to unresolved
+%               cross-function conflicts; foundational reference for the
+%               gap that NEXUS Marketplace addresses
+@article{trentesaux2009,
+  author  = {Trentesaux, Damien},
+  title   = {Distributed control of production systems},
+  journal = {Engineering Applications of Artificial Intelligence},
+  year    = {2009},
+  volume  = {22},
+  number  = {7},
+  pages   = {971--978},
+  doi     = {10.1016/j.engappai.2009.05.001}
+}
+
+% [READ] — negotiation agent for integrated process planning and scheduling
+%          Use: negotiation-based coordination in manufacturing — supports RQ1
+@article{wong2006negotiation,
+  author  = {Wong, T. N. and Leung, C. W. and Mak, K. L. and Fung, R. Y. K.},
+  title   = {An Agent-Based Negotiation Approach to Integrate Process
+             Planning and Scheduling},
+  journal = {International Journal of Production Research},
+  year    = {2006},
+  volume  = {44},
+  number  = {7},
+  pages   = {1427--1444},
+  doi     = {10.1080/00207540500409723}
+}
+
+
+% ============================================================
+%  3b. JOINT PRODUCTION–MAINTENANCE SCHEDULING (crew & resources)
+% ============================================================
+
+% [ABSTRACT] — Laggoune, Chateauneuf & Aissani 2015 (C&IE):
+%              First paper to explicitly model technician competence
+%              and availability constraints inside a joint production +
+%              maintenance scheduling problem on multiple machines.
+%              Shows that ignoring crew constraints renders 30–60% of
+%              schedules infeasible in simulation. Uses MAS with reactive
+%              rescheduling when breakdown occurs.
+%              Use: Chapter 3 / DD-V5-015 — cite when introducing
+%              crew_capacity parameter; justifies that shared maintenance
+%              crew is a real industrial driver of PSA–PMA conflict
+@article{laggoune2015crew,
+  author  = {Laggoune, Radouane and Chateauneuf, Alaa and Aissani, Djamil},
+  title   = {Considering Human Resource Constraints for Real Joint
+             Production and Maintenance Schedules},
+  journal = {Computers \& Industrial Engineering},
+  year    = {2015},
+  volume  = {90},
+  pages   = {197--207},
+  doi     = {10.1016/j.cie.2015.08.013}
+}
+
+% [ABSTRACT] — Berrichi, Yalaoui & Amodeo 2022 (IJPR):
+%              Dynamic FJSP with joint human resource + maintenance
+%              constraints. Key result: sequential (decoupled) approach
+%              yields 15–40% higher total cost vs. joint optimization
+%              across 240 test instances at varying utilization rates.
+%              Use: Chapter 3 / DD-V5-015 — primary quantitative
+%              citation justifying that joint multi-issue coordination
+%              strictly outperforms sequential cascade; directly supports
+%              the DD-V5-015 benchmark design objective
+@article{berrichi2022dynamic,
+  author  = {Berrichi, Ali and Yalaoui, Farouk and Amodeo, Lionel},
+  title   = {Joint Optimisation for Dynamic Flexible Job-Shop Scheduling},
+  journal = {International Journal of Production Research},
+  year    = {2022},
+  volume  = {60},
+  number  = {18},
+  pages   = {5675--5696},
+  doi     = {10.1080/00207543.2021.1966533}
+}
+
+% ============================================================
+%  4. COORDINATION MECHANISMS (CNP / DCOP / AUCTION)
+% ============================================================
+
+%  --- 3b. Cross-function integration: documented tradeoffs ---
+%  These papers prove the cross-function tradeoff is real and quantifiable
+%  on FJSP/job-shop. All use centralized optimizers with no agent autonomy
+%  or stakeholder negotiation — this is precisely the gap NEXUS fills.
+
+% [READ] — integrates production + maintenance + quality on a deteriorating
+%          manufacturing system. Quality (defect rate) depends explicitly on
+%          machine degradation state — coupling PSA/PMA/QCA is not arbitrary.
+%          Key limit: single centralized decision-maker, no stakeholder autonomy,
+%          no audit trail. Proves the tradeoff is real and cost-relevant.
+%          Use: Chapter 1/3 — cite to justify why cross-function coordination
+%               between PSA, PMA, QCA is industrially meaningful
+@article{hernandez2018deteriorating,
+  author  = {Hern{\'a}ndez-Gress, Eva Selene and Rivera-G{\'o}mez, H.
+             and Barrag{\'a}n-Vite, Irving and Garnica-Gonz{\'a}lez, J.
+             and Corona-Armenta, J. R. and Montano-Arango, Oscar},
+  title   = {Production and Maintenance Planning for a Deteriorating System
+             with Operation-Dependent Defectives},
+  journal = {Applied Sciences},
+  year    = {2018},
+  volume  = {8},
+  number  = {2},
+  pages   = {165},
+  doi     = {10.3390/APP8020165}
+}
+
+% [READ] — multi-objective FJSP: integrates production scheduling + maintenance
+%          planning on job-shop. NSGA-II reduces costs 28% but increases makespan
+%          4% — no solution dominates all metrics simultaneously.
+%          Key limit: centralized optimizer (NSGA-II), no autonomous agents,
+%          no negotiation between functional stakeholders.
+%          Use: Chapter 3 — cite as "closest centralized approach" to NEXUS
+%               on FJSP; the Pareto front they compute is the upper bound
+%               NEXUS approximates via distributed negotiation
+@article{fauzi2026multiobjective,
+  author  = {Fauzi, Rifqi and Masruroh, N. A.},
+  title   = {Multi-objective optimization for integrated production scheduling
+             and maintenance planning},
+  journal = {International Journal of Production Management and Engineering},
+  year    = {2026},
+  doi     = {10.4995/ijpme.2026.23177}
+}
+
+% [READ] — multiobjective joint optimization of production scheduling +
+%          maintenance on FJSP specifically. Explicitly uses "independent
+%          decision-making under fixed maintenance period" as baseline —
+%          this is the Siloed baseline in NEXUS experiments.
+%          Key limit: centralized weighted-sum model, no cross-function
+%          negotiation, no audit trail.
+%          Use: Chapter 3+4 — (1) cite as the centralized FJSP benchmark
+%               NEXUS distributes; (2) their "independent decision-making"
+%               baseline is the formal definition of NEXUS Siloed baseline
+@article{ma2015multiobjective,
+  author  = {Ma, Huimin and Ye, Jianfei},
+  title   = {Multiobjective Joint Optimization of Production Scheduling and
+             Maintenance Planning in the Flexible {Job-Shop} Problem},
+  journal = {Mathematical Problems in Engineering},
+  year    = {2015},
+  volume  = {2015},
+  pages   = {725460},
+  doi     = {10.1155/2015/725460}
+}
+
+% [READ] — hybrid CNP-like approach for FJSP with machine downtime;
+%          10--30% tardiness improvement.
+%          Limit: scope = single work center; no safety governance.
+%          Use: empirical CNP result in scheduling — supports RQ1
+@article{didden2024,
+  author  = {Didden, Joost and Dang, Quynh-Nhu and Adan, Ivo},
+  title   = {A hybrid negotiation-based approach for flexible job shop
+             scheduling with machine downtime},
+  journal = {European Journal of Operational Research},
+  year    = {2024},
+  volume  = {312},
+  number  = {1},
+  pages   = {45--60},
+  doi     = {10.1016/j.ejor.2023.06.012}
+}
+
+% [READ] — canonical DCOP survey: models, algorithms, applications.
+%          Fundamental limit: NP-hard in general case; scalability degrades
+%          with more agents and continuous variables — incompatible with plant floor.
+%          Use: dismissal of DCOP as CNP alternative (theoretical foundation)
+@article{fioretto2018dcop,
+  author  = {Fioretto, Ferdinando and Pontelli, Enrico and Yeoh, William},
+  title   = {Distributed Constraint Optimization Problems and Applications:
+             {A} Survey},
+  journal = {Journal of Artificial Intelligence Research},
+  year    = {2018},
+  volume  = {61},
+  pages   = {623--698},
+  doi     = {10.1613/jair.5565}
+}
+
+% [ABSTRACT] — ADOPT: first complete asynchronous DCOP algorithm with
+%              quality guarantees (optimal or epsilon-optimal solutions).
+%              Foundational algorithm paper for the DCOP paradigm alongside
+%              DPOP. Single-objective only.
+%              Limit: exponential message complexity; single-objective;
+%              not applied to manufacturing.
+%              Use: Chapter 2 — cite as foundational DCOP algorithm to
+%              anchor the DCOP paradigm discussion; contrast with NEXUS
+%              multi-objective CNP approach
+@article{modi2005adopt,
+  author  = {Modi, Pragnesh Jay and Shen, Wei-Min and Tambe, Milind and Yokoo, Makoto},
+  title   = {{ADOPT}: Asynchronous Distributed Constraint Optimization
+             with Quality Guarantees},
+  journal = {Artificial Intelligence},
+  year    = {2005},
+  volume  = {161},
+  number  = {1--2},
+  pages   = {149--180},
+  doi     = {10.1016/j.artint.2004.09.003}
+}
+
+% [ABSTRACT] — MO-DCOP formalization and algorithm: introduces the
+%              multi-objective extension of DCOP with Pareto-optimal
+%              solution search using pseudo-tree and Lp-norm method.
+%              Formally documented but limited to small instances (cyber
+%              security test cases). Not applied to manufacturing.
+%              Limit: no industrial validation; Pareto front only partially
+%              recoverable (Lp-norm with p=1 only guarantees one point).
+%              Use: Chapter 2 — cite as the MO-DCOP formalization;
+%              confirms that MO-DCOP exists formally but lacks industrial
+%              application — gap that motivates NEXUS CNP-MO approach
+@inproceedings{okimoto2013modcop,
+  author    = {Okimoto, Tenda and Schwind, Nicolas and Cl\'{e}ment, Maxime
+               and Inoue, Katsumi},
+  title     = {Lp-Norm Based Algorithm for Multi-Objective Distributed
+               Constraint Optimization},
+  booktitle = {Proceedings of the 12th International Conference on
+               Autonomous Agents and Multiagent Systems (AAMAS-13)},
+  year      = {2014},
+  doi       = {10.65109/xcdp4676}
+}
+
+% [ABSTRACT] — DCOP applied to manufacturing task allocation in self-adaptive
+%              systems. Explicit limit in paper: "poor scalability compared to
+%              centralized approach when increasing number of agents."
+%              Use: manufacturing-specific confirmation of DCOP scalability limit
+@inproceedings{hirsch2021,
+  author    = {Hirsch, Joseph and Neumayer, Martin and Ponsar, Hella and
+               Kosak, Oliver and Reif, Wolfgang},
+  title     = {Distributed Constraint Optimization for Task Allocation in
+               Self-Adaptive Manufacturing Systems},
+  booktitle = {Proceedings of the IEEE International Conference on
+               Autonomic Computing and Self-Organizing Systems Companion (ACSOS-C)},
+  year      = {2021},
+  pages     = {1--6},
+  doi       = {10.1109/ACSOS-C52956.2021.00034}
+}
+
+% [READ] — first empirical study of multi-attribute auctions with scoring
+%           functions: price, quality, and delivery time as bid vector.
+%           Shows that multi-attribute auctions outperform price-only
+%           auctions in social welfare when buyer preferences are complex.
+%           Use: foundational reference for Auction-multi in Set 0 v2;
+%                cite when defining the scoring function used by NEXUS
+%                Auction mechanism to evaluate multi-dimensional bids
+%                (makespan, cost, quality, stockout) from PSA/PMA/QCA/SCA
+@article{bichler2000multiattribute,
+  author  = {Bichler, Martin},
+  title   = {An Experimental Analysis of Multi-Attribute Auctions},
+  journal = {Decision Support Systems},
+  year    = {2000},
+  volume  = {29},
+  number  = {3},
+  pages   = {249--268},
+  doi     = {10.1016/S0167-9236(00)00075-0}
+}
+
+% [READ] — formal protocol and bidding strategies for multi-attribute
+%           auctions: defines how agents submit attribute vectors and how
+%           an auctioneer evaluates bids via scoring function.
+%           Covers both sealed-bid and English (ascending) variants.
+%           Key result: dominant strategies exist under mild conditions.
+%           Use: methodological foundation for Auction-multi in Set 0 v2;
+%                cite when formalizing the NEXUS Auction winner-determination
+%                rule (max scoring function over bid vectors); positions
+%                Auction-multi as theoretically grounded alternative to
+%                CNP-multi with known incentive properties
+@inproceedings{david2002multiattribute,
+  author    = {David, Esther and Azoulay-Schwartz, Rina and Kraus, Sarit},
+  title     = {Protocols and Strategies for Automated Multi-Attribute Auctions},
+  booktitle = {Proceedings of the First International Joint Conference on
+               Autonomous Agents and Multiagent Systems (AAMAS)},
+  year      = {2002},
+  pages     = {77--78},
+  doi       = {10.1145/544741.544761}
+}
+
+% [ABSTRACT] — multi-issue negotiation via package deals proves Pareto-optimality:
+%              negotiating all issues simultaneously dominates issue-by-issue
+%              sequential negotiation. Formal bilateral cooperative protocol.
+%              Limit: bilateral only (two-agent); not applied to manufacturing
+%              or multi-party ConflictEvent scenarios.
+%              Use: "package-deal negotiation achieves Pareto-superior outcomes
+%              vs. sequential issue negotiation (Fatima et al., 2004); NEXUS
+%              extends this logic to multi-party CNP with utility-grounded
+%              bidding across four agents"
+@article{fatima2004multiissue,
+  author  = {Fatima, Shaheen S. and Wooldridge, Michael and Jennings, Nicholas R.},
+  title   = {An Agenda-Based Framework for Multi-Issue Negotiation},
+  journal = {Artificial Intelligence},
+  year    = {2004},
+  volume  = {152},
+  number  = {1},
+  pages   = {1--45},
+  doi     = {10.1016/S0004-3702(03)00115-2}
+}
+
+% [ABSTRACT] — distributed Nash Bargaining: each agent maximizes own objective
+%              while satisfying coupling constraints; iterative algorithm converges
+%              to Pareto-optimal Nash Bargaining Solution over a network of agents.
+%              Formally proven convergence. NOT applied to manufacturing.
+%              Limit: requires iterative convergence rounds — incompatible with
+%              NEXUS single-shot ConflictEvent resolution; agents must share
+%              objective weights.
+%              Use: "distributed Nash Bargaining (Camisa et al., 2020) achieves
+%              Pareto-optimality but requires iterative rounds; NEXUS favors
+%              single-shot CNP for real-time industrial responsiveness"
+@article{camisa2020nashbargaining,
+  author  = {Camisa, Andrea and Kohler, Philipp N. and Zeng, Shen and
+             Notarnicola, Ivano and Ebenbauer, Christian and Notarstefano, Giuseppe},
+  title   = {A Distributed Optimization Algorithm for Nash Bargaining in
+             Multi-Agent Systems},
+  journal = {IFAC-PapersOnLine},
+  year    = {2020},
+  volume  = {53},
+  number  = {2},
+  pages   = {2684--2689},
+  doi     = {10.1016/J.IFACOL.2020.12.402}
+}
+
+% [ABSTRACT] — auction-based coordination for scheduling with dynamic jobs.
+%              Limit: competitive (agents maximize individual utility) vs.
+%              CNP cooperative (the loser keeps contributing to the system).
+%              Use: "auction assumes competitive agents; CNP assumes cooperative"
+@article{liu2024auction,
+  author  = {Liu, Yaqiong and Sun, Shudong and Shen, Gaopan and
+             Wang, Xi Vincent and Wiktorsson, Magnus and Wang, Lihui},
+  title   = {An Auction-Based Approach for Multi-Agent Uniform Parallel
+             Machine Scheduling with Dynamic Jobs Arrival},
+  journal = {Engineering},
+  year    = {2024},
+  volume  = {36},
+  pages   = {89--101},
+  doi     = {10.1016/j.eng.2023.09.024}
+}
+
+% [ABSTRACT] — argumentation-based negotiation: distributed reasoning with
+%              incomplete and inconsistent knowledge.
+%              Limit: computationally heavy; requires shared ontology.
+%              Use: "argumentation handles richer semantics but at higher
+%              computational cost than utility-grounded CNP"
+@article{monteAlto2024,
+  author  = {Monte-Alto, Helio H. L. C. and Morveli-Espinoza, Mariela and
+             Tacla, C. A.},
+  title   = {Argumentation-based multi-agent distributed reasoning in
+             dynamic and open environments},
+  journal = {Knowledge and Information Systems},
+  year    = {2024},
+  volume  = {66},
+  pages   = {4981--5015},
+  doi     = {10.1007/s10115-024-02101-x}
+}
+
+% [READ] — canonical survey on cooperative MARL evaluation;
+%          introduces "independent learners" as standard baseline.
+%          Use: justifies Siloed as the standard no-coordination baseline
+%               (not just TB/PM) — each agent optimizes independently
+@article{panait2005cooperative,
+  author  = {Panait, Liviu and Luke, Sean},
+  title   = {Cooperative Multi-Agent Learning: The State of the Art},
+  journal = {Autonomous Agents and Multi-Agent Systems},
+  year    = {2005},
+  volume  = {11},
+  number  = {3},
+  pages   = {387--434},
+  doi     = {10.1007/s10458-005-2631-2}
+}
+
+% [READ] — introduces independent learners as baseline for cooperative MARL:
+%          each agent optimizes independently without coordination.
+%          Directly maps to the Siloed baseline in NEXUS experiments.
+%          Use: formal justification that Siloed = independent learners
+%               is the standard no-coordination baseline
+@inproceedings{lauer2000distributed,
+  author    = {Lauer, Martin and Riedmiller, Martin},
+  title     = {An Algorithm for Distributed Reinforcement Learning
+               in Cooperative Multi-Agent Systems},
+  booktitle = {Proceedings of the 17th International Conference on
+               Machine Learning (ICML)},
+  year      = {2000},
+  pages     = {535--542},
+  publisher = {Morgan Kaufmann}
+}
+
+
+% ============================================================
+%  4c. HEURISTIC SEARCH FOUNDATIONS
+% ============================================================
+
+% [CITED] — Hart, Nilsson & Raphael 1968 (IEEE Trans. Systems Science):
+%              Introduces A* algorithm and the formal notion of admissible
+%              heuristic for optimal pathfinding in state spaces.
+%              Foundational paper for heuristic search in AI.
+%              Use: Chapter 3 / Methodology — cite as foundational
+%              reference when discussing heuristic-based agent search
+%              or bid evaluation in NEXUS agents; canonical anchor
+%              for any heuristic methodology claim
+@article{hart1968astar,
+  author  = {Hart, Peter E. and Nilsson, Nils J. and Raphael, Bertram},
+  title   = {A Formal Basis for the Heuristic Determination of
+             Minimum Cost Paths},
+  journal = {IEEE Transactions on Systems Science and Cybernetics},
+  year    = {1968},
+  volume  = {4},
+  number  = {2},
+  pages   = {100--107},
+  doi     = {10.1109/TSSC.1968.300136}
+}
+
+% ============================================================
+%  4b. SUPPLIER COORDINATION & SPARE PARTS
+% ============================================================
+
+% [ABSTRACT] — Xia, Xi & Lee 2021 (RESS):
+%              Joint CBM + spare parts ordering for multi-unit system
+%              with dual sourcing (two suppliers, different price/lead-time).
+%              MDP formulation. Key result: dual-sourcing integrated policy
+%              reduces total cost up to 42% vs. standard (s,S) single-
+%              supplier policy. Models contention for shared supplier
+%              capacity across multiple units simultaneously.
+%              Use: Chapter 3 / DD-V5-015 — cite when introducing
+%              supplier_capacity_fraction parameter; directly justifies
+%              the SCA–PMA contention scenario where both agents compete
+%              for limited supplier allocation
+@article{xia2021cbm_spares,
+  author  = {Xia, Tian and Xi, Lifeng and Lee, Jay},
+  title   = {Joint Optimization of Condition-Based Maintenance and
+             Spare Parts Orders for Multi-Unit Systems with Dual Sourcing},
+  journal = {Reliability Engineering \& System Safety},
+  year    = {2021},
+  volume  = {210},
+  pages   = {107052},
+  doi     = {10.1016/j.ress.2021.107052}
+}
+
+% [ABSTRACT] — Syntetos, Babai & Boylan 2023 (IMA J. Management Math.):
+%              Systematic review and critical taxonomy of 200+ papers on
+%              joint maintenance + spare-parts inventory models.
+%              Identifies 5 classes of unsolved supplier-production
+%              contention problems, including multi-customer capacity
+%              allocation. Confirms the gap is open in 2023.
+%              Use: Chapter 2 / gap evidence — cite as authoritative
+%              review showing that joint SCA+PMA coordination under
+%              shared supplier capacity is an open research problem;
+%              supports the novelty claim of NEXUS cross-domain mediation
+@article{syntetos2023spares,
+  author  = {Syntetos, Aris A. and Babai, Mohammed Zied and
+             Boylan, John E.},
+  title   = {Joint Maintenance and Spare-Parts Inventory Models:
+             A Review and Critical Taxonomy},
+  journal = {IMA Journal of Management Mathematics},
+  year    = {2024},
+  volume  = {35},
+  number  = {1},
+  pages   = {83--112},
+  doi     = {10.1093/imaman/dpad016}
+}
+
+% ============================================================
+%  5. SAFETY — SHIELDING & ALTERNATIVES
+% ============================================================
+
+%  --- 5a. Shielding foundations ---
+
+% [READ] — levels of automation taxonomy (Parasuraman et al.);
+%          theoretical basis for the Fence layer
+%          Use: justifies the 3-tier escalation design (auto / log / escalate)
+@article{parasuraman2000,
+  author  = {Parasuraman, Raja and Sheridan, Thomas B. and Wickens, Christopher D.},
+  title   = {A model for types and levels of human interaction with automation},
+  journal = {IEEE Transactions on Systems, Man, and Cybernetics --- Part A},
+  year    = {2000},
+  volume  = {30},
+  number  = {3},
+  pages   = {286--297},
+  doi     = {10.1109/3468.844354}
+}
+
+% [READ] — foundational shielding paper for RL: a shield monitors agent actions
+%          and intervenes only when necessary to guarantee safety.
+%          Formal hard guarantees; compatible with any policy.
+%          Use: Fence main foundation; justifies shielding over CBF (continuous)
+%               and CPO (probabilistic)
+@article{alshiekh2017,
+  author  = {Alshiekh, Mohammed and Bloem, Roderick and Ehlers,
+             R{\"u}diger and K{\"o}nighofer, Bettina and
+             Niekum, Scott and Topcu, Ufuk},
+  title   = {Safe {Reinforcement} {Learning} via {Shielding}},
+  journal = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  year    = {2018},
+  volume  = {32},
+  number  = {1},
+  doi     = {10.1609/aaai.v32i1.11797}
+}
+
+% [READ] — extension of shielding to the multi-agent case: centralized and
+%          factored shielding for MARL; safety guaranteed during training
+%          and deployment.
+%          Use: Fence — justifies that shielding scales to 4 heterogeneous agents;
+%               theoretical basis for per-decision sigma score
+@incollection{elsayed2021,
+  author    = {{Elsayed-Aly}, Ingy and Bharadwaj, Suda and Amato,
+               Christopher and Ehlers, R{\"u}diger and Topcu, Ufuk
+               and Feng, Lu},
+  title     = {Safe {Multi-Agent} {Reinforcement} {Learning} via {Shielding}},
+  booktitle = {Adaptive and Learning Agents Workshop},
+  year      = {2021},
+  pages     = {63--70},
+  publisher = {Springer International Publishing},
+  doi       = {10.1007/978-3-030-73959-1_5}
+}
+
+% [READ] — first proposal of minimum-cost shields for MAS from LTL specs;
+%          shields as runtime enforcement, one per agent.
+%          Use: Fence — justifies applicability to heterogeneous MAS and the
+%               principle of minimal interference (sigma threshold)
+@inproceedings{konighofer2019shields,
+  author    = {K{\"o}nighofer, Bettina and Bloem, Roderick and
+               Dimitrova, Rayna and Bharadwaj, Suda and Topcu, Ufuk},
+  title     = {Synthesis of Minimum-Cost Shields for Multi-agent Systems},
+  booktitle = {Proceedings of the American Control Conference (ACC)},
+  year      = {2019},
+  pages     = {1986--1993},
+  doi       = {10.23919/ACC.2019.8815233}
+}
+
+% [READ] — dynamic shielding for MARL: shields that split, merge, and
+%          recompute at runtime — more efficient than static shielding
+%          in complex environments.
+%          Use: Fence — motivates adaptive sigma (post-School) and runtime
+%               shielding rather than design-time pre-verification
+@article{xiao2023dynamic,
+  author  = {Xiao, Wenli and Lyu, Yiwei and Dolan, John M.},
+  title   = {Model-based Dynamic Shielding for Safe and Efficient
+             Multi-Agent Reinforcement Learning},
+  journal = {arXiv preprint arXiv:2304.06281},
+  year    = {2023},
+  doi     = {10.48550/arXiv.2304.06281}
+}
+
+% [READ] — runtime synthesis of shields for MAS: shields computed at runtime
+%          (not design-time), distributed per-agent, without global state.
+%          Use: Fence — justifies runtime evaluation (Fence assesses each
+%               decision at the moment, not offline); supports per-agent shields
+@article{raju2020runtime,
+  author  = {Raju, Dhananjay and Bharadwaj, Suda and Topcu, Ufuk},
+  title   = {Online Synthesis for Runtime Enforcement of Safety
+             in Multi-Agent Systems},
+  journal = {arXiv preprint arXiv:1910.10380},
+  year    = {2020},
+  doi     = {10.48550/arXiv.1910.10380}
+}
+
+% [READ] — safety-aware MAS for manufacturing Plug & Produce: task allocation
+%          avoiding risks via automatic safety analysis and formal verification
+%          with NuSMV model checker. Real industrial scenario.
+%          Use: Fence — only paper combining MAS + safety + manufacturing;
+%               contextualises Fence within ISA-95 Level 3 domain
+@article{massouh2024safe,
+  author  = {Massouh, Bassam and Danielsson, Fredrik and
+             Lennartson, Bengt and Ramasamy, Sudha and Khabbazi, Mahmood},
+  title   = {Safe and Reconfigurable Manufacturing: Safety Aware
+             Multi-Agent Control for {Plug \& Produce} System},
+  journal = {The International Journal of Advanced Manufacturing Technology},
+  year    = {2024},
+  doi     = {10.1007/s00170-024-14112-7}
+}
+
+%  --- 5b. Alternatives to shielding (why not CPO / CBF / rule-based) ---
+
+% [CITED] — foundational Constrained Policy Optimization (CPO) paper.
+%           Optimizes policy on CMDP with theoretical constraint satisfaction
+%           in expectation — NOT hard guarantees.
+%           Use: Fence "why not CPO": guarantees only in expectation, not hard;
+%                requires extended training; not suitable for one-shot runtime decisions
+@inproceedings{achiam2017cpo,
+  author    = {Achiam, Joshua and Held, David and Tamar, Aviv
+               and Abbeel, Pieter},
+  title     = {Constrained Policy Optimization},
+  booktitle = {Proceedings of the 34th International Conference on
+               Machine Learning (ICML)},
+  year      = {2017},
+  pages     = {22--31},
+  doi       = {10.5555/3305381.3305386}
+}
+
+% [CITED] — comprehensive survey on Control Barrier Functions (CBF): theory
+%           and applications for safety-critical control in differentiable
+%           continuous systems. Forward invariance of safe set via QP.
+%           Use: Fence "why not CBF": requires continuous differentiable dynamics;
+%                NEXUS is event-driven discrete (SimPy) — CBF not applicable
+@article{ames2019cbf,
+  author  = {Ames, Aaron D. and Coogan, Samuel and Egerstedt, Magnus
+             and Notomista, Gennaro and Sreenath, Koushil
+             and Tabuada, Paulo},
+  title   = {Control Barrier Functions: Theory and Applications},
+  journal = {arXiv preprint arXiv:1903.11199},
+  year    = {2019},
+  doi     = {10.48550/arXiv.1903.11199}
+}
+
+% [CITED] — model-based integrated approach for machine safety and product
+%           quality in flexible production systems (IEC 61508 + process-FMEA).
+%           Rule-based: static safety rules defined at design time.
+%           Use: Fence "why not rule-based": static rules do not adapt to
+%                dynamic conflict context; no sigma score; no structured audit
+%                trail per decision; NEXUS operates on events not physical states
+@inproceedings{koo2021squad,
+  author    = {Koo, Chee Hung and Rothbauer, Stefan and Vorderer, Marian
+               and Hoefig, Kai and Zeller, Marc},
+  title     = {{SQUADfps}: Integrated Model-Based Machine Safety and
+               Product Quality for Flexible Production Systems},
+  booktitle = {Proceedings of the IFAC Workshop on Intelligent
+               Manufacturing Systems},
+  year      = {2021},
+  doi       = {10.1007/978-3-030-32872-6_15}
+}
+
+
+% ============================================================
+%  6. CONTINUAL LEARNING
+% ============================================================
+
+% [READ] — EWC: Elastic Weight Consolidation — prevents catastrophic
+%          forgetting by penalizing changes to weights important for
+%          previous tasks, using Fisher Information as importance measure.
+%          Use: cite in Chapter 2 (School layer) to introduce EWC as the
+%               mechanism for preventing catastrophic forgetting when agents
+%               adapt to new production regimes; justify choice over
+%               replay-based methods by citing the Fisher Information
+%               formulation; School layer is explicitly future work (RQ3)
+@article{kirkpatrick2017,
+  author  = {Kirkpatrick, James and others},
+  title   = {Overcoming catastrophic forgetting in neural networks},
+  journal = {Proceedings of the National Academy of Sciences},
+  year    = {2017},
+  volume  = {114},
+  number  = {13},
+  pages   = {3521--3526},
+  doi     = {10.1073/pnas.1611835114}
+}
+
+
+% ============================================================
+%  7. GAP EVIDENCE & COMPETITORS
+% ============================================================
+
+% [READ] — CAMARL: counterfactual attention MARL for joint maintenance +
+%          scheduling in hybrid flowshop (JMS 2023). CTDE architecture.
+%          Explicit limit: only 2 functions (maintenance + scheduling);
+%          requires 3--7h offline training; no audit trail; no safety governance.
+%          Use: closest competitor — covers 2/4 NEXUS functions;
+%               their future work items are exactly NEXUS contributions
+@article{zhang2023camarl,
+  author  = {Zhang, Nianmin and Shen, Yilan and Du, Ye and Chen, Lili and Zhang, Xi},
+  title   = {Counterfactual-attention multi-agent reinforcement learning for joint
+             condition-based maintenance and production scheduling},
+  journal = {Journal of Manufacturing Systems},
+  year    = {2023},
+  volume  = {71},
+  pages   = {70--81},
+  doi     = {10.1016/j.jmsy.2023.08.011}
+}
+
+% [ABSTRACT] — MARL for job shop scheduling: good performance but no
+%              auditability; requires training on non-stationary production system.
+%              Use: "MARL cannot provide decision audit trail; training in
+%              safety-critical environments is operationally unacceptable"
+@article{li2024marl,
+  author  = {Li, Fang and Rahimifard, Shahin and Pu, Yu},
+  title   = {Multi-Agent Reinforcement Learning for Job Shop Scheduling
+             in Dynamic Environments},
+  journal = {Sustainability},
+  year    = {2024},
+  volume  = {16},
+  number  = {8},
+  pages   = {3234},
+  doi     = {10.3390/su16083234}
+}
+
+% [ABSTRACT] — MAST taxonomy of 14 failure modes in LLM-based MAS, derived
+%              from 1600+ annotated traces across 7 popular MAS frameworks.
+%              3 failure categories: system design issues, inter-agent
+%              misalignment, task verification. Inter-annotator agreement κ=0.88.
+%              Key finding: performance gains of LLM-MAS on benchmarks are
+%              "often minimal"; identified failures require more sophisticated
+%              solutions than current systems provide.
+%              Use: CRITICAL counter-evidence against LLM-as-orchestrator.
+%                   Cite in Sec 2 (why NEXUS uses CNP over LLM negotiation):
+%                   audit-trail failure, non-determinism, inter-agent misalignment
+%                   are documented failure modes in production LLM-MAS.
+%                   Balances zhao2024llmmas + lim2024llm + farahani2025.
+%              Note: complementary evidence also in Acharya (2026, Semantic
+%                    Consensus Framework paper) reporting 41-86.7% failure
+%                    rates in enterprise LLM-MAS deployments — no verifiable
+%                    DOI available yet, track on Semantic Scholar S2ID:287618044.
+@article{cemri2025,
+  author  = {Cemri, Mert and Pan, Melissa Z. and Yang, Shuyi and
+             Agrawal, Lakshya A. and Chopra, Bhavya and Tiwari, Rishabh and
+             Keutzer, Kurt and Parameswaran, Aditya G. and Klein, Dan and
+             Ramchandran, Kannan and Zaharia, Matei and Gonzalez, Joseph E.
+             and Stoica, Ion},
+  title   = {Why Do Multi-Agent {LLM} Systems Fail?},
+  journal = {arXiv preprint},
+  year    = {2025},
+  note    = {arXiv:2503.13657},
+  doi     = {10.48550/arXiv.2503.13657}
+}
+
+% [ABSTRACT] — LLM-based MAS for shopfloor: negotiation via LLM instead of
+%              predefined rules; small-batch manufacturing.
+%              Use: theoretical basis for NEXUS slow path (LLM arbiter)
+@article{zhao2024llmmas,
+  author  = {Zhao, Zhen and Tang, Dunbing and Zhu, Haihua and
+             Zhang, Zequn and Chen, Kai and Liu, Changchun and Ji, Yuchen},
+  title   = {A Large Language Model-based multi-agent manufacturing system
+             for intelligent shopfloor},
+  journal = {arXiv preprint},
+  year    = {2024},
+  note    = {arXiv:2405.16887},
+  url     = {https://arxiv.org/abs/2405.16887}
+}
+
+% [ABSTRACT] — LLM-enabled MAS for manufacturing: resource agent + product agent,
+%              coordination and adaptation via natural language.
+%              Use: context for NEXUS LLM slow path contribution
+@article{lim2024llm,
+  author  = {Lim, Jonghan and Vogel-Heuser, Birgit and Kovalenko, Ilya},
+  title   = {Large Language Model-Enabled Multi-Agent Manufacturing Systems},
+  journal = {arXiv preprint},
+  year    = {2024},
+  note    = {arXiv:2406.01893},
+  url     = {https://arxiv.org/abs/2406.01893}
+}
+
+% [ABSTRACT] — Hybrid Agentic AI + MAS for prescriptive maintenance:
+%              LLM for strategic orchestration + rule-based agents for edge.
+%              Architecture very close to NEXUS (fast/slow hybrid path).
+%              Use: motivate the hybrid CNP fast path + LLM slow path design
+@article{farahani2025,
+  author  = {Farahani, Mojtaba A. and Khan, Md Irfan and Wuest, Thorsten},
+  title   = {Hybrid Agentic {AI} and Multi-Agent Systems in Smart Manufacturing},
+  journal = {Journal of Manufacturing Systems},
+  year    = {2026},
+  doi     = {10.1016/j.jmsy.2026.04.002}
+}
+
+
+% ============================================================
+%  7b. CASCADE EFFECTS & DISRUPTION PROPAGATION
+% ============================================================
+
+% [ABSTRACT] — Nourelfath, Nahas & Ben-Daya 2016 (RESS):
+%              Integrated PM + production model for deteriorating systems.
+%              Key quantitative result: deferring maintenance by 1 period
+%              increases defect rate by 18–35% depending on machine age
+%              and degradation rate. Qualitative loss from cascade
+%              (PMA→QCA) exceeds direct repair cost in all tested scenarios.
+%              Use: Chapter 3 / DD-V5-015 — primary citation for the
+%              cascade mechanism PM-delay → breakdown → defect rate increase;
+%              directly justifies the conflict_balance parameter and the
+%              QCA secondary objective in NEXUS synthetic benchmark;
+%              cite when describing why cross-domain coordination matters
+@article{nourelfath2016cascade,
+  author  = {Nourelfath, Mustapha and Nahas, Nabil and Ben-Daya, Mohamed},
+  title   = {Integrated Preventive Maintenance and Production Decisions
+             for Imperfect Processes},
+  journal = {Reliability Engineering \& System Safety},
+  year    = {2016},
+  volume  = {148},
+  pages   = {21--31},
+  doi     = {10.1016/j.ress.2015.11.015}
+}
+
+% [ABSTRACT] — Dolgui, Ivanov & Sokolov 2018 (IJPR):
+%              Formal definition and review of the "ripple effect" in
+%              supply networks: disruption propagation that amplifies
+%              beyond the point of origin due to structural interdependencies.
+%              ~400 citations. Distinguishes local (single-domain) vs.
+%              cross-domain propagation. Provides mathematical basis for
+%              disruption propagation modelling.
+%              Use: Chapter 3 / DD-V5-015 — cite as theoretical foundation
+%              for the disruption_clustering parameter; "ripple effect"
+%              is the formal term for the SCA→PSA→QCA cascade that
+%              NEXUS cross-functional mediation is designed to intercept;
+%              also supports Chapter 1 problem motivation
+@article{dolgui2018ripple,
+  author  = {Dolgui, Alexandre and Ivanov, Dmitry and Sokolov, Boris},
+  title   = {Ripple Effect in the Supply Chain: An Analysis and
+             Recent Literature},
+  journal = {International Journal of Production Research},
+  year    = {2018},
+  volume  = {56},
+  number  = {1--2},
+  pages   = {414--430},
+  doi     = {10.1080/00207543.2017.1387680}
+}
+
+% ============================================================
+%  8. BENCHMARKS & EVALUATION METHODOLOGY
+% ============================================================
+
+% [CITED] — foundational NSGA-II paper: fast non-dominated sorting +
+%           crowding distance + elitism. Standard algorithm in multi-objective
+%           optimization for manufacturing scheduling; 50,000+ citations.
+%           Use: cite when describing fauzi2026multiobjective's method
+%                and when motivating multi-objective formulation of NEXUS
+%                coordination (PSA vs PMA Pareto tradeoff).
+%           Note: if NEXUS adopts Strada 1 (multi-objective Marketplace),
+%                 this becomes a MUST-READ foundational citation.
+@article{deb2002nsga2,
+  author  = {Deb, Kalyanmoy and Pratap, Amrit and Agarwal, Sameer
+             and Meyarivan, T.},
+  title   = {A Fast and Elitist Multiobjective Genetic Algorithm: {NSGA-II}},
+  journal = {IEEE Transactions on Evolutionary Computation},
+  year    = {2002},
+  volume  = {6},
+  number  = {2},
+  pages   = {182--197},
+  doi     = {10.1109/4235.996017}
+}
+
+% [ABSTRACT] — NSGA-III: extends NSGA-II to many-objective problems (3+)
+%              via reference-point-based selection on the Pareto front.
+%              For 4 objectives (makespan, maintenance cost, defect rate,
+%              stockout), NSGA-III outperforms NSGA-II in coverage and
+%              spread of solutions.
+%              Use: (1) cite to justify choice of NSGA-III over NSGA-II
+%                   as centralized baseline in Set B (4 objectives);
+%                   (2) "standard many-objective algorithm" reference when
+%                   describing NEXUS Set B experimental design
+@article{deb2014nsga3,
+  author  = {Deb, Kalyanmoy and Jain, Himanshu},
+  title   = {An Evolutionary Many-Objective Optimization Algorithm Using
+             Reference-Point-Based Nondominated Sorting Approach, Part {I}:
+             Solving Problems With Box Constraints},
+  journal = {IEEE Transactions on Evolutionary Computation},
+  year    = {2014},
+  volume  = {18},
+  number  = {4},
+  pages   = {577--601},
+  doi     = {10.1109/TEVC.2013.2281535}
+}
+
+% [ABSTRACT] — bibliometric review of NSGA-II in scheduling (2022):
+%              maps 20+ years of NSGA-II applications to JSP/FJSP;
+%              confirms it is the de-facto standard for multi-objective
+%              scheduling comparisons.
+%              Use: cite to justify use of NSGA-II as comparison baseline
+%                   in fauzi2026multiobjective; establishes methodological
+%                   context for Pareto-based scheduling literature
+@article{gandomi2022scheduling,
+  author  = {Gandomi, Amir H. and Chen, Fang and Rahimi, Iman and
+             Deb, Kalyanmoy and Nikoo, Mohammad Reza},
+  title   = {Scheduling by {NSGA-II}: Review and Bibliometric Analysis},
+  journal = {Processes},
+  year    = {2022},
+  volume  = {10},
+  number  = {1},
+  pages   = {98},
+  doi     = {10.3390/pr10010098}
+}
+
+% [ABSTRACT] — CA-MADRL: multi-agent DRL for multi-objective batch scheduling
+%              in semiconductor manufacturing. Combines offline NSGA-II
+%              (MS-NSGA-II) to shape reward functions for online MARL.
+%              Key limit: CTDE architecture, no negotiation, no cross-function
+%              coordination (only batch scheduling + tardiness + energy).
+%              Use: gap evidence — multi-agent + multi-objective in manufacturing
+%                   WITHOUT structured negotiation; confirms NEXUS novelty
+%                   in combining CNP negotiation with Pareto tradeoff arbitration
+@article{zhang2024marl_semiconductor,
+  author  = {Zhang, Peng and Jin, Mengyu and Wang, Ming and Zhang, Jie
+             and He, Junjie and Zheng, Peng},
+  title   = {A Clustering-Aided Multi-Agent Deep Reinforcement Learning
+             for Multi-Objective Parallel Batch Processing Machines
+             Scheduling in Semiconductor Manufacturing},
+  journal = {Measurement and Control},
+  year    = {2024},
+  volume  = {57},
+  doi     = {10.1177/00202940241269643}
+}
+
+% [READ] — comprehensive guide to multi-objective RL and planning:
+%           Pareto dominance, hypervolume indicator, scalarization
+%           tradeoffs, utility functions with vector-valued objectives.
+%           Covers why linear weighted sums are insufficient when agent
+%           preferences are not known a priori.
+%           Use: cite in Set B methodology to justify hypervolume as
+%                comparison metric between NEXUS distributed and NSGA-II
+%                centralized; establishes that linear scalarization of
+%                4 objectives (makespan, maintenance cost, defective output,
+%                stockout) loses Pareto structure and is methodologically
+%                inadequate for cross-functional tradeoff evaluation
+@article{hayes2022morl,
+  author  = {Hayes, Conor F. and R{\u{a}}dulescu, Roxana and Bargiacchi,
+             Eugenio and K{\"a}llstr{\"o}m, Johan and Macfarlane, Matthew
+             and Reymond, Mathieu and Verstraeten, Timothy and Zintgraf,
+             Luisa M. and Dazeley, Richard and Heintz, Fredrik and
+             Howley, Enda and Irissappane, Athirai A. and Mannion,
+             Patrick and Now{\'{e}}, Ann and Ramos, Gabriel and Restelli,
+             Marcello and Vamplew, Peter and Roijers, Diederik M.},
+  title   = {A Practical Guide to Multi-Objective Reinforcement
+             Learning and Planning},
+  journal = {Autonomous Agents and Multi-Agent Systems},
+  year    = {2022},
+  volume  = {36},
+  number  = {1},
+  pages   = {26},
+  doi     = {10.1007/s10458-022-09552-y}
+}
+
+% [CITED] — Brandimarte instances Mk01--Mk10; used in Sim 1, 2, and 3
+%           Use: cite when introducing experimental setup; justify selection
+%                of Mk06 (10 jobs × 6 machines, high flexibility) and Mk10
+%                (20 jobs × 15 machines, larger scale) as two complexity
+%                levels of FJSP; standard reference in MAS scheduling
+%                literature for flexible job-shop benchmark instances
+@article{brandimarte1993,
+  author  = {Brandimarte, Paolo},
+  title   = {Routing and scheduling in a flexible job shop by tabu search},
+  journal = {Annals of Operations Research},
+  year    = {1993},
+  volume  = {41},
+  number  = {3},
+  pages   = {157--183},
+  doi     = {10.1007/BF02023073}
+}
+
+% [CITED] — standard benchmark for job shop problems (up to 100 jobs × 20 machines)
+%           Use: cite as the benchmark NOT used in NEXUS experiments, to
+%                acknowledge the alternative and justify the choice of
+%                Brandimarte Mk06/Mk10; Taillard instances are JSP not FJSP
+%                and lack the machine flexibility required by NEXUS agents
+@article{taillard1993,
+  author  = {Taillard, {\'E}ric},
+  title   = {Benchmarks for basic scheduling problems},
+  journal = {European Journal of Operational Research},
+  year    = {1993},
+  volume  = {64},
+  number  = {2},
+  pages   = {278--285},
+  doi     = {10.1016/0377-2217(93)90182-M}
+}
+
+% [READ] — rigorous evaluation methodology for RL: bootstrap CIs, IQM,
+%          performance profiles. Argues point estimates (mean/median) are
+%          insufficient with few runs.
+%          Use: cite in Set B methodology to justify bootstrap confidence
+%               intervals and performance profiles over point estimates;
+%               in multi-objective context, motivates use of hypervolume
+%               with non-parametric CIs rather than mean hypervolume alone;
+%               also justifies n=30 runs as minimum for reliable comparison
+@inproceedings{agarwal2021precipice,
+  author    = {Agarwal, Rishabh and Schwarzer, Max and Castro, Pablo Samuel
+               and Courville, Aaron and Bellemare, Marc G.},
+  title     = {Deep Reinforcement Learning at the Edge of the Statistical Precipice},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2021},
+  note      = {arXiv:2108.13264},
+  doi       = {10.48550/arXiv.2108.13264}
+}
+
+% [READ] — standard reference for simulation model V&V: four approaches
+%          to model validity, conceptual/operational/data validity.
+%          Use: cite in methodology section to justify simulation validation
+%               procedure (face validity + sensitivity analysis)
+@article{sargent2013verification,
+  author  = {Sargent, Robert G.},
+  title   = {Verification and validation of simulation models},
+  journal = {Journal of Simulation},
+  year    = {2013},
+  volume  = {7},
+  number  = {1},
+  pages   = {12--24},
+  doi     = {10.1057/jos.2012.20}
+}
+
+% [ABSTRACT] — bi-objective FJSP+PM: integrates preventive maintenance
+%              windows directly into the FJSP scheduling model. Objectives:
+%              minimize makespan + minimize system unavailability (PM miss).
+%              Synthetic instances generated with controllable PM frequency
+%              parameter on top of standard FJSP topology.
+%              Limit: only 2 of 4 ISA-95 domains (scheduling + maintenance);
+%              no quality or supply chain objectives.
+%              Use: Chapter 3 — cite as evidence that FJSP+maintenance
+%              instances are always generated synthetically in literature
+%              (no public benchmark exists); confirms that adding cross-domain
+%              parameters to FJSP topology is established practice
+@article{moradi2011fjsppm,
+  author  = {Moradi, Esmaeel and Ghomi, S. M. T. Fatemi and Zandieh, Mostafa},
+  title   = {Bi-objective Optimization Research on Integrated Fixed Time
+             Interval Preventive Maintenance and Production for Scheduling
+             Flexible Job-Shop Problem},
+  journal = {Expert Systems with Applications},
+  year    = {2011},
+  volume  = {38},
+  number  = {6},
+  pages   = {7169--7178},
+  doi     = {10.1016/j.eswa.2010.12.043}
+}
+
+% ============================================================
+%  8b. FJSP BENCHMARKS — ADDITIONAL INSTANCES
+% ============================================================
+
+% [ABSTRACT] — Hurink 1994 (OR Spektrum): defines the three canonical
+%              FJSP flexibility levels edata (low), rdata (medium), vdata
+%              (high). Most cited benchmark family after Brandimarte.
+%              Tabu search for FJSP with multiple machine types.
+%              Use: Chapter 3 — cite when discussing FJSP flexibility
+%              taxonomy; vdata instances represent high-flexibility
+%              scenario closest to NEXUS multi-machine agents.
+%              Note: technical report version precedes OR Spektrum pub.
+@article{hurink1994fjsp,
+  author  = {Hurink, Johann and Jurisch, Bernd and Tansini, Mathias},
+  title   = {Tabu Search for the Job Shop Scheduling Problem with
+             Multiple Machine Types},
+  journal = {OR Spektrum},
+  year    = {1994},
+  volume  = {15},
+  number  = {4},
+  pages   = {205--215},
+  doi     = {10.1007/BF01719451}
+}
+
+% [ABSTRACT] — Behnke & Geiger 2012 (FJSPLib): 60 work-center-oriented
+%              instances for FJSP benchmark evaluation, publicly available
+%              at FJSPLib repository. Helmut Schmidt University Hamburg.
+%              Use: Chapter 3 — cite as secondary benchmark family;
+%              used to confirm NEXUS generalizability beyond Brandimarte
+%              instances. No DOI available (technical report).
+@techreport{behnke2012fjsp,
+  author      = {Behnke, Daniel and Geiger, Martin Josef},
+  title       = {Test Instances for the Flexible Job Shop Scheduling
+                 Problem with Work Centers},
+  institution = {Helmut Schmidt University Hamburg},
+  year        = {2012},
+  note        = {Available at FJSPLib: \url{http://fjsp.fernuni-hagen.de}},
+  doi         = {10.24405/436}
+}
+
+% [ABSTRACT] — Rahmati 2018 (Annals of Operations Research):
+%              novel integrated CBM + stochastic FJSP formulation.
+%              Machine degradation modeled as gamma process; maintenance
+%              interventions and production scheduling co-optimized via
+%              simulation-based multi-objective evolutionary approach.
+%              Objectives: makespan + maintenance cost + system reliability.
+%              Limit: centralized optimizer; no autonomous agents;
+%              no supply chain or quality domains.
+%              Use: Chapter 3 — strongest published formalization of
+%              CBM+FJSP coupling; directly justifies stochastic degradation
+%              model in NEXUS synthetic benchmark (DD-V5-015);
+%              cite when introducing breakdown_intensity parameter.
+@article{rahmati2018cbm,
+  author  = {Rahmati, S. H. Amin and Ahmadi, Abbas and Govindan, Kannan},
+  title   = {A Novel Integrated Condition-Based Maintenance and Stochastic
+             Flexible Job Shop Scheduling Problem: Simulation-Based
+             Optimization Approach},
+  journal = {Annals of Operations Research},
+  year    = {2018},
+  volume  = {269},
+  number  = {1--2},
+  pages   = {583--621},
+  doi     = {10.1007/s10479-017-2594-0}
+}
+
+% [ABSTRACT] — Luo et al. 2022 (Expert Systems with Applications):
+%              distributed FJSP considering worker arrangement,
+%              solved via improved memetic algorithm. Models both machine
+%              assignment and human operator allocation simultaneously.
+%              Distributed topology: multiple work centers share workers.
+%              Limit: no maintenance, quality, or supply chain domains;
+%              workers treated as identical resources.
+%              Use: Chapter 3 — cite as evidence that distributed FJSP
+%              variants with additional resource dimensions (workers)
+%              are an established research direction; confirms that
+%              adding cross-domain parameters to FJSP is methodologically
+%              sound. Also supports DD-V5-015 multi-domain design.
+@article{luo2022dfjsp,
+  author  = {Luo, Qiang and Deng, Qianwang and Gong, Guiliang and
+             Guo, Xin and Liu, Xiahui},
+  title   = {A Distributed Flexible Job Shop Scheduling Problem
+             Considering Worker Arrangement Using an Improved
+             Memetic Algorithm},
+  journal = {Expert Systems with Applications},
+  year    = {2022},
+  volume  = {207},
+  pages   = {117984},
+  doi     = {10.1016/j.eswa.2022.117984}
+}
+
+% [ABSTRACT] — Wocker et al. 2024 (Journal of Intelligent Manufacturing):
+%              FJSP with preventive maintenance consideration. Quantifies
+%              that naive (non-integrated) maintenance scheduling increases
+%              makespan by more than 20 percentage points compared to
+%              joint optimization. First rigorous quantification of the
+%              cost of scheduling-maintenance decoupling on FJSP.
+%              Limit: single-domain (no quality/supply chain); centralized
+%              optimizer; no agents.
+%              Use: Chapter 1/3 — cite as the most recent peer-reviewed
+%              evidence that decoupled maintenance scheduling degrades
+%              production performance on FJSP; directly quantifies the
+%              operational gap that NEXUS cross-functional coordination
+%              addresses; more recent than Rahmati 2018 for this argument
+@article{wocker2024fjsppm,
+  author  = {Wocker, Michael Mario and Ostermeier, Frederik Ferid and
+             Wanninger, Tobias and Zwinkau, Ronny and Deuse, Jochen},
+  title   = {Flexible Job Shop Scheduling with Preventive Maintenance
+             Consideration},
+  journal = {Journal of Intelligent Manufacturing},
+  year    = {2024},
+  volume  = {35},
+  number  = {4},
+  pages   = {1517--1539},
+  doi     = {10.1007/s10845-023-02114-3}
+}
+
+% ============================================================
+%  9. FJSP FOUNDATIONS & BENCHMARK METHODOLOGY
+% ============================================================
+
+% [ABSTRACT] — canonical NP-hardness proof for Job Shop Scheduling.
+%              Garey & Johnson 1979 (book) established JSP as strongly
+%              NP-hard; the 1976 paper in Operations Research Letters
+%              is the original reference. Cited in virtually every
+%              scheduling paper to justify heuristic approaches.
+%              Use: Chapter 3 — one-line citation to justify why
+%              FJSP cannot be solved to optimality at industrial scale;
+%              anchors the complexity argument for NEXUS simulation approach
+@article{garey1976nphard,
+  author  = {Garey, Michael R. and Johnson, David S. and Sethi, Ravi},
+  title   = {The Complexity of Flowshop and Jobshop Scheduling},
+  journal = {Mathematics of Operations Research},
+  year    = {1976},
+  volume  = {1},
+  number  = {2},
+  pages   = {117--129},
+  doi     = {10.1287/moor.1.2.117}
+}
+
+% [ABSTRACT] — definitive 30-year survey of the FJSP: classifies criteria,
+%              constraints, configurations, and solution approaches from
+%              1993 to 2023. Covers benchmark families (Brandimarte, Hurink,
+%              Behnke), MO variants, and dynamic/uncertain extensions.
+%              ~400 papers reviewed. Standard reference for FJSP literature.
+%              Use: Chapter 3 — cite as authoritative survey to justify
+%              benchmark choice (Brandimarte) and position NEXUS problem
+%              formulation within FJSP taxonomy; also cite to confirm that
+%              no cross-functional 4-domain benchmark exists in literature
+@article{dauzere2024fjspreview,
+  author  = {Dauz{\`e}re-P{\'e}r{\`e}s, St{\'e}phane and Ding, Junwen
+             and Shen, Liji and Tamssaouet, Karim},
+  title   = {The Flexible Job Shop Scheduling Problem: {A} Review},
+  journal = {European Journal of Operational Research},
+  year    = {2024},
+  volume  = {314},
+  number  = {2},
+  pages   = {409--432},
+  doi     = {10.1016/j.ejor.2023.05.017}
+}
+
+% [ABSTRACT] — mathematical model and benchmark instances for FJSP:
+%              introduces instances beyond Brandimarte with different
+%              job/machine configurations. First paper to provide
+%              FJSP-specific mathematical programming formulation with
+%              benchmark generation methodology.
+%              Use: Chapter 3 — cite as alternative benchmark source
+%              and as precedent for synthetic instance generation with
+%              controlled parameters in FJSP context
+@article{fattahi2007fjsp,
+  author  = {Fattahi, Parviz and Saidi-Mehrabad, Mohammad and Jolai, Fariborz},
+  title   = {Mathematical Modeling and Heuristic Approaches to Flexible
+             Job Shop Scheduling Problems},
+  journal = {Journal of Intelligent Manufacturing},
+  year    = {2007},
+  volume  = {18},
+  number  = {3},
+  pages   = {331--342},
+  doi     = {10.1007/s10845-007-0026-8}
+}
+
+% [ABSTRACT] — demonstrates CP solvers (IBM CP Optimizer, OR-Tools)
+%              on industrial-scale JSP instances (up to 10,000 operations).
+%              Shows that exact methods scale to real industrial sizes
+%              when using constraint programming, providing upper bound
+%              reference for what centralized solvers can achieve.
+%              Use: Chapter 3/5 — cite as evidence that centralized
+%              exact methods are feasible at moderate scale but become
+%              impractical for real-time re-scheduling under disruptions;
+%              motivates NEXUS distributed approach
+@article{dacol2022cp,
+  author  = {Da Col, Giacomo and Teppan, Erich C.},
+  title   = {Industrial-Size Job Shop Scheduling with Constraint Programming},
+  journal = {Operations Research Perspectives},
+  year    = {2022},
+  volume  = {9},
+  pages   = {100249},
+  doi     = {10.1016/j.orp.2022.100249}
+}
+
+% [ABSTRACT] — Gahm, Wimmer & Tuma 2026 (EJOR):
+%              Reverse Instance Generation (RIG): generates diverse,
+%              feasible, and realistic machine scheduling instances by
+%              reverse engineering from the instance space via ISA.
+%              Constructive approach (no iterative search); demonstrated
+%              on single-machine weighted tardiness, JSP, and serial
+%              batch scheduling. Published in European Journal of
+%              Operational Research (Q1, top venue).
+%              Use: Chapter 3 / DD-V5-015 — cite alongside smithmiles2022isa
+%              as direct methodological precedent for synthetic instance
+%              generation targeting under-represented regions of the
+%              instance space; confirms that generating instances to fill
+%              instance space gaps is an active peer-reviewed research
+%              direction, not an ad-hoc choice
+@article{gahm2026rig,
+  author  = {Gahm, Christian and Wimmer, Michael and Tuma, Axel},
+  title   = {Machine Scheduling Instance Generation by Reverse Engineering
+             from Instance Space Analysis},
+  journal = {European Journal of Operational Research},
+  year    = {2026},
+  volume  = {330},
+  number  = {3},
+  pages   = {760--779},
+  doi     = {10.1016/j.ejor.2025.10.029}
+}
+
+% [ABSTRACT] — Hooker 1995 (Journal of Heuristics):
+%              foundational methodological paper arguing that heuristic
+%              evaluation must move from ad-hoc benchmark collections to
+%              controlled experimentation with systematic parameter variation.
+%              Coined "we have it all wrong" critique of benchmark-only testing.
+%              ~160 citations. Foundational for OR/CS experimental methodology.
+%              Use: Chapter 3 / DD-V5-015 — cite when justifying controlled
+%              parameter variation in synthetic benchmark design: "Hooker (1995)
+%              argues that heuristic evaluation requires controlled experiments
+%              across parameter ranges, not fixed benchmark sets"; supports
+%              the 5×3 factorial design of DD-V5-015
+@article{hooker1995testing,
+  author  = {Hooker, John N.},
+  title   = {Testing Heuristics: {We} Have It All Wrong},
+  journal = {Journal of Heuristics},
+  year    = {1995},
+  volume  = {1},
+  number  = {1},
+  pages   = {33--42},
+  doi     = {10.1007/BF02430364}
+}
+
+% [CITED] — Law & Kelton 2000 (McGraw-Hill, 3rd ed.):
+%           canonical reference for discrete-event simulation methodology:
+%           output analysis, replication number, warm-up period, confidence
+%           intervals, variance reduction techniques.
+%           ISBN: 0-07-059292-6. Standard reference in simulation-based
+%           evaluation methodology.
+%           Use: Chapter 4 / methodology — cite when specifying simulation
+%           output analysis: number of replications (n=30), warm-up period
+%           rationale, and confidence interval construction; complements
+%           sargent2013verification (V&V) with output statistics methodology
+@book{law2000simulation,
+  author    = {Law, Averill M. and Kelton, W. David},
+  title     = {Simulation Modeling and Analysis},
+  edition   = {3rd},
+  publisher = {McGraw-Hill},
+  address   = {New York},
+  year      = {2000},
+  isbn      = {0-07-059292-6}
+}
+
+% [CITED] — Pinedo 2016 (Springer, 5th ed.):
+%           standard scheduling theory textbook: classification notation
+%           (alpha|beta|gamma), JSP/FJSP problem formulations, makespan
+%           definition, flow time, due-date constraints. ~5000 citations.
+%           Use: Chapter 3 — cite when introducing scheduling notation
+%           and FJSP problem formulation; provides canonical reference for
+%           terminology (C_max, r_j, p_ij) used throughout NEXUS experiments
+@book{pinedo2016scheduling,
+  author    = {Pinedo, Michael L.},
+  title     = {Scheduling: Theory, Algorithms, and Systems},
+  edition   = {5th},
+  publisher = {Springer},
+  address   = {Cham},
+  year      = {2016},
+  isbn      = {978-3-319-26578-0},
+  doi       = {10.1007/978-3-319-26580-3}
+}
+
+% [ABSTRACT] — Instance Space Analysis (ISA): methodology to visualize
+%              algorithm performance across the full space of possible
+%              test instances. Enables objective assessment of benchmark
+%              diversity and identification of instance features that
+%              predict algorithm strengths/weaknesses. ACM Computing Surveys.
+%              Use: Chapter 3 — cite as methodological justification for
+%              synthetic benchmark design: "following ISA methodology
+%              (Smith-Miles & Muñoz 2022), we design synthetic instances
+%              to cover coupling-density regions absent from standard FJSP
+%              families"; directly supports the 'instance space gap' argument
+@article{smithmiles2022isa,
+  author  = {Smith-Miles, Kate and Mu{\~n}oz, Mario Andr{\'e}s},
+  title   = {Instance Space Analysis for Algorithm Testing: Methodology
+             and Software Tools},
+  journal = {ACM Computing Surveys},
+  year    = {2023},
+  volume  = {55},
+  number  = {12},
+  pages   = {1--31},
+  doi     = {10.1145/3572895}
+}
+
+% ============================================================
+%  12. INDUSTRIAL FJSP EXTENSIONS (DD-V5-022 / DD-V5-023)
+%      Literature grounding the industrial automotive benchmark:
+%      multi-action FJSP, sequence-dependent setups, worker and
+%      maintenance-budget constraints, and the NSGA-III comparator.
+% ============================================================
+
+% [CITED] — Lei et al. 2022 (Expert Systems with Applications):
+%              End-to-end multi-action deep RL framework for FJSP; an
+%              agent jointly controls a job-operation policy and a
+%              machine policy (multi-Markov decision process).
+%              Use: Chapters 5-6 — multi-action FJSP grounding for the
+%              DD-V5-022 multi-product-mix feature. Metadata web-verified.
+@article{lei2022multiactionfjsp,
+  author  = {Lei, Kun and Guo, Peng and Zhao, Wenchao and Wang, Yi
+             and Qian, Linmao and Meng, Xiangyin and Tang, Liansheng},
+  title   = {A Multi-action Deep Reinforcement Learning Framework for
+             Flexible Job-shop Scheduling Problem},
+  journal = {Expert Systems with Applications},
+  year    = {2022},
+  volume  = {205},
+  pages   = {117796},
+  doi     = {10.1016/j.eswa.2022.117796}
+}
+
+% [CITED] — Han et al. 2021 (Expert Systems with Applications):
+%              Multi-objective evolutionary algorithms with heuristic
+%              decoding for the hybrid flow shop scheduling problem
+%              under worker constraints.
+%              Use: Chapters 5-6 — worker/resource-constraint grounding
+%              for the DD-V5-022 resource-constraint feature.
+%              Metadata Crossref-verified.
+@article{han2021hfsp,
+  author  = {Han, Wenwu and Deng, Qianwang and Gong, Guiliang and
+             Zhang, Like and Luo, Qiang},
+  title   = {Multi-objective Evolutionary Algorithms with Heuristic
+             Decoding for Hybrid Flow Shop Scheduling Problem with
+             Worker Constraint},
+  journal = {Expert Systems with Applications},
+  year    = {2021},
+  volume  = {168},
+  pages   = {114282},
+  doi     = {10.1016/j.eswa.2020.114282}
+}
+
+% [CITED] — Azzouz et al. 2017 (Procedia Computer Science, KES 2017):
+%              Self-adaptive hybrid metaheuristic (GA + VNS + ILS) for
+%              the FJSP with sequence-dependent setup times.
+%              Use: Chapters 5-6 — grounding for the DD-V5-022
+%              sequence-dependent setup-time feature.
+%              Metadata Crossref-verified.
+@article{azzouz2017sequencesetup,
+  author  = {Azzouz, Ameni and Ennigrou, Meriem and Ben Said, Lamjed},
+  title   = {A Self-adaptive Hybrid Algorithm for Solving Flexible
+             Job-shop Problem with Sequence-dependent Setup Time},
+  journal = {Procedia Computer Science},
+  year    = {2017},
+  volume  = {112},
+  pages   = {457--466},
+  doi     = {10.1016/j.procs.2017.08.023}
+}
+
+% [CITED] — Wang & Yu 2010 (Computers & Industrial Engineering):
+%              Filtered-beam-search heuristic for the FJSP with
+%              maintenance activities and maintenance-resource limits.
+%              Use: Chapters 5-6 — cost-/maintenance-aware FJSP
+%              grounding for the DD-V5-022 maintenance-budget feature.
+%              Metadata Crossref-verified.
+@article{wang2010pmcost,
+  author  = {Wang, Shijin and Yu, Jianbo},
+  title   = {An Effective Heuristic for Flexible Job-shop Scheduling
+             Problem with Maintenance Activities},
+  journal = {Computers \& Industrial Engineering},
+  year    = {2010},
+  volume  = {59},
+  number  = {3},
+  pages   = {436--447},
+  doi     = {10.1016/j.cie.2010.05.016}
+}
+
+% [CITED] — Wang et al. 2020 (IEEE SSCI 2020):
+%              A tailored NSGA-III instantiation for multi-objective
+%              flexible job shop scheduling.
+%              Use: Chapter 5 — NSGA-III centralized comparator
+%              (Centralization Comparison). Metadata Crossref-verified.
+%              NOTE: DD-V5-021 design notes cited this as
+%              "Wang, M. & Pan, X. (2020)"; that author attribution
+%              could not be verified. This verified Wang et al. (Leiden
+%              group) paper matches the described content (custom
+%              NSGA-III for FJSP, 2020) and is used instead --- confirm
+%              the intended reference.
+@inproceedings{wang2020nsga3fjsp,
+  author    = {Wang, Yali and van Stein, Bas and B{\"a}ck, Thomas
+               and Emmerich, Michael},
+  title     = {A Tailored {NSGA-III} for Multi-objective Flexible
+               Job Shop Scheduling},
+  booktitle = {2020 IEEE Symposium Series on Computational
+               Intelligence (SSCI)},
+  year      = {2020},
+  pages     = {2746--2753},
+  doi       = {10.1109/SSCI47803.2020.9308373}
+}
+
+% [UNVERIFIED] — Nguyen et al. 2014, joint maintenance-budget models.
+%   Cited in DD-V5-022 design notes (maintenance-budget-cap feature).
+%   Could NOT be located via Crossref / Google Scholar; the closest
+%   located work is Nguyen & Bagajewicz (2008) on PM scheduling.
+%   TODO: DOI verification needed --- confirm the intended reference
+%   and full metadata before citing.
+@misc{nguyen2014maintenancebudget,
+  author = {Nguyen and others},
+  title  = {Joint Maintenance-budget Allocation Models for
+            Production Systems},
+  year   = {2014},
+  note   = {Unverified reference carried over from DD-V5-022 design
+            notes; bibliographic metadata to be confirmed before citing}
+}
+
+% [UNVERIFIED] — Brunetti & Sridhar 2016, multi-objective FJSP tardiness.
+%   Cited in DD-V5-022 design notes (due-date / tardiness-penalty
+%   feature). Could NOT be located via Crossref / Google Scholar.
+%   TODO: DOI verification needed --- confirm the intended reference
+%   and full metadata before citing.
+@misc{brunetti2016tardiness,
+  author = {Brunetti and Sridhar},
+  title  = {Multi-objective Flexible Job-shop Scheduling with
+            Due-date and Tardiness Objectives},
+  year   = {2016},
+  note   = {Unverified reference carried over from DD-V5-022 design
+            notes; bibliographic metadata to be confirmed before citing}
+}
+
+% [UNVERIFIED] — Forrester 2008, industrial demand variability.
+%   Cited in DD-V5-022 design notes (rush-order fraction). Could NOT be
+%   located as a 2008 publication; "Forrester effect" demand
+%   amplification traces to Forrester's Industrial Dynamics (1961).
+%   TODO: DOI verification needed --- confirm the intended reference
+%   (the year may be incorrect) before citing.
+@misc{forrester2008demand,
+  author = {Forrester},
+  title  = {Demand Variability and Order Amplification in
+            Industrial Production},
+  year   = {2008},
+  note   = {Unverified reference carried over from DD-V5-022 design
+            notes; year and metadata to be confirmed before citing}
+}

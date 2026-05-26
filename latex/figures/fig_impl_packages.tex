@@ -1,0 +1,41 @@
+% Figure: source packages mapped onto the four architectural layers.
+\begin{tikzpicture}[nx,
+  pkg/.style={draw,thick,rounded corners=3pt,fill=white,
+              align=left,font=\sffamily\footnotesize\ttfamily,
+              minimum width=3.4cm,minimum height=0.8cm,inner sep=4pt},
+  lay/.style={draw,thick,rounded corners=3pt,align=center,
+              font=\sffamily\footnotesize,
+              minimum width=4.0cm,minimum height=0.8cm,inner sep=4pt},
+  arr/.style={-{Latex[length=2.4mm]},thick,nxGray},
+]
+  % ---- packages (left column) ----
+  \node[pkg,draw=nxGray] (cor)  at (-5.0, 2.5)  {src/core/};
+  \node[pkg,draw=nxGreen](age) at (-5.0, 1.4)  {src/agents/};
+  \node[pkg,draw=nxRed]  (mkt)  at (-5.0, 0.3)  {src/marketplace/};
+  \node[pkg,draw=nxRed]  (bas)  at (-5.0,-0.8)  {src/baselines/};
+  \node[pkg,draw=nxOrange](fnc) at (-5.0,-1.9)  {src/fence/};
+  \node[pkg,draw=nxBlue] (env)  at (-5.0,-3.0)  {src/environment/};
+  \node[pkg,draw=nxBlue] (ben)  at (-5.0,-4.1)  {src/benchmarks/};
+
+  % ---- layers (right column) ----
+  \node[lay,fill=nxGrayBg,draw=nxGray]    (lcor) at (4.0, 2.5)  {\textbf{cross-layer data structures}};
+  \node[lay,fill=nxGreenBg,draw=nxGreen]  (lage) at (4.0, 1.4)  {\textbf{Worker} layer};
+  \node[lay,fill=nxRedBg,draw=nxRed]      (lmkt) at (4.0, 0.3)  {\textbf{Marketplace} layer};
+  \node[lay,fill=nxRedBg,draw=nxRed]      (lbas) at (4.0,-0.8)  {\textbf{Marketplace} alternatives};
+  \node[lay,fill=nxOrangeBg,draw=nxOrange](lfnc) at (4.0,-1.9)  {\textbf{Fence} layer};
+  \node[lay,fill=nxBlueBg,draw=nxBlue]    (lenv) at (4.0,-3.0)  {\textbf{simulation} substrate};
+  \node[lay,fill=nxBlueBg,draw=nxBlue]    (lben) at (4.0,-4.1)  {\textbf{simulation} substrate};
+
+  % ---- arrows ----
+  \draw[arr] (cor.east) -- (lcor.west);
+  \draw[arr,nxGreen]  (age.east) -- (lage.west);
+  \draw[arr,nxRed]    (mkt.east) -- (lmkt.west);
+  \draw[arr,nxRed]    (bas.east) -- (lbas.west);
+  \draw[arr,nxOrange] (fnc.east) -- (lfnc.west);
+  \draw[arr,nxBlue]   (env.east) -- (lenv.west);
+  \draw[arr,nxBlue]   (ben.east) -- (lben.west);
+
+  % ---- headings ----
+  \node[font=\sffamily\small\bfseries] at (-5.0,3.4) {Source packages};
+  \node[font=\sffamily\small\bfseries] at ( 4.0,3.4) {Architectural layers};
+\end{tikzpicture}
