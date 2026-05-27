@@ -598,8 +598,9 @@ the environment appends an explicit-failure record to its audit log, so
 the rate and shape of capacity-induced rewrites is visible to the Fence
 audit stream.
 
-The Siloed and RBC baselines (Section~\ref{sec:impl-baselines})
-implement \texttt{remediate} by returning \texttt{None} unconditionally.
+The Siloed and Rule-Based Coordination (RBC) baselines
+(Section~\ref{sec:impl-baselines}) implement \texttt{remediate} by
+returning \texttt{None} unconditionally.
 This is the documented architectural asymmetry of \texttt{DD-027}: only
 a joint, search-based mediator can usefully remediate, because only the
 joint mediator has anywhere to search. A static threshold rule already
@@ -1139,7 +1140,7 @@ asymmetry of \texttt{DD-027}, and the conservative default is applied.
 \label{sec:impl-testing}
 
 The implementation is accompanied by an automated regression suite of
-approximately \textbf{$350$ tests at the time of writing} organised
+approximately 350 tests at the time of writing, organised
 into 29 \texttt{pytest} modules under \texttt{tests/}. The suite is
 what lets the architecture be modified with confidence: every design
 decision named in this chapter was developed under the test suite as
@@ -1251,5 +1252,6 @@ the home agents benchmark-agnostic
 SimPy discrete-event environment with an explicit-failure path for
 resource exhaustion (Section~\ref{sec:impl-simframework}); and the
 whole assembly is held in place by a deterministic, layer-organised
-test suite (~$350$ tests at the time of writing; Section~\ref{sec:impl-testing}). The next
+test suite (approximately 350 tests at the time of writing;
+Section~\ref{sec:impl-testing}). The next
 chapter turns from how the system is built to what it does.

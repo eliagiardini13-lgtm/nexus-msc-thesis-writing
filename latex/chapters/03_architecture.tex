@@ -1357,9 +1357,12 @@ or DCOP-style alternative achieves.
 \label{sec:arch-impl}
 
 The architecture described in this chapter is realised as a Python
-codebase; this section gives an overview of its structure and forward
-references to Chapter~\ref{ch:implementation}, where the implementation
-is described in full. Figure~\ref{fig:lifecycle} first recapitulates the
+codebase, described in full in Chapter~\ref{ch:implementation}. The
+codebase mirrors the four-layer decomposition --- one package per
+layer, plus a shared \texttt{core/} for the data structures that cross
+layer boundaries --- and the whole assembly is held in place by an
+automated regression suite that lets the architecture be modified and
+extended with confidence. Figure~\ref{fig:lifecycle} recapitulates the
 architecture as an end-to-end operational sequence, from the detection
 of a plant condition to the safety audit of the resulting contract.
 
@@ -1368,53 +1371,6 @@ coordination event, from the environment detecting a domain condition,
 through negotiation and contract execution, to the Fence safety audit.
 Bounded disclosure, joint welfare maximisation, and the log-only audit
 trail are annotated at the stages where they apply.}{fig_lifecycle}
-
-The codebase mirrors the four-layer decomposition. The Worker layer
-lives in an \texttt{agents/} package: a base BDI agent encapsulates the
-shared belief-update and bid-generation pipeline, and four subclasses
---- one per agent --- contribute the specialised belief update and
-constraint derivation. The Marketplace layer lives in a
-\texttt{marketplace/} package: the Bid Bus, the Mediator with the
-branch-cut A* search of Section~\ref{subsec:mediator}, and the Contract
-Record. The Fence layer lives in a \texttt{fence/} package: the rule
-suite and the three-tier classifier. The composite contract, the bid,
-and the constraint --- the data structures shared across layers --- live
-in a \texttt{core/} package, and the discrete-event plant model lives in
-an \texttt{environment/} package. A \texttt{baselines/} package holds
-the comparison mechanisms used in Chapter~\ref{ch:results}: the siloed
-(uncoordinated) baseline, the rule-based coordination baseline, and a
-single-winner contract-net mechanism. The one-to-one correspondence
-between layers and packages is deliberate: the architectural boundaries
-of this chapter are the module boundaries of the code, so a reader of
-the implementation can navigate it with the four-layer diagram of
-Figure~\ref{fig:arch-layers} in hand.
-
-Two properties of the implementation are worth previewing here because
-they bear on the credibility of the architecture as a whole.
-
-The first is \emph{test coverage}. The implementation carries an
-automated regression suite of approximately $350$ tests at the time of writing, spanning every
-layer: the core data structures, the mediator search, the environment,
-the Fence classifier, the four agents, the baseline mechanisms, and
-end-to-end integration runs. The suite is what lets the architecture be
-modified with confidence --- the admissible-heuristic correction of
-Section~\ref{subsec:mediator}, for instance, was made and verified
-against it --- and it is described in detail in
-Chapter~\ref{ch:implementation}.
-
-The second is \emph{reproducibility}. A coordination event in \NEXUS{}
-is fully deterministic: given the same conflict announcement and the
-same agent state, the agents generate the same bids --- the bid
-generation defaults to deterministic greedy search
-(Section~\ref{subsec:bid-gen}) --- the Mediator runs the same search,
-and the deterministic tie-break selects the same contract. Determinism
-holds across processes, because the agent-side random sampling is keyed
-by a stable hash rather than by a process-dependent seed. The practical
-consequence, quantified in Chapter~\ref{ch:implementation}, is that a
-whole experimental batch reproduces byte-for-byte on re-execution. For a
-reference architecture this is not a mere convenience: it means every
-empirical claim in Chapter~\ref{ch:results} rests on a computation that
-any reader can re-run and obtain identically.
 
 One scope boundary of the present implementation should be stated
 plainly, because it bears on the empirical chapters. The conflict
