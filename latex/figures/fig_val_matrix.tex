@@ -1,0 +1,51 @@
+% Figure 5.7: 4x4 decision-attribution contribution matrices.
+% Rows = agents (PSA,PMA,QCA,SCA); cols = dimensions (PR,MW,QA,SH).
+% Diagonal mass is exact (NEXUS 41.5%, Siloed 51.5%); the per-cell
+% distribution shown is illustrative (uniform within diagonal / off-diagonal).
+\begin{tikzpicture}[nx,
+  cell/.style={draw=nxGray,thick,minimum size=1.0cm,inner sep=0,
+               font=\sffamily\scriptsize},
+  rowlbl/.style={font=\sffamily\scriptsize,anchor=east},
+  collbl/.style={font=\sffamily\scriptsize,rotate=40,anchor=west},
+]
+  \def\agents{{"PSA","PMA","QCA","SCA"}}
+  \def\dims{{"PR","MW","QA","SH"}}
+
+  % ===== helper: draw one matrix at horizontal offset X, diagonal val D,
+  %       off-diagonal val O, title T =====
+  \foreach \X/\D/\O/\T/\tag in {0/10.4/4.9/{NEXUS}/{diagonal mass $=41.5\%$},
+                                7.6/12.9/4.0/{Siloed-v5}/{diagonal mass $=51.5\%$}}{
+    % title
+    \node[font=\sffamily\small\bfseries] at (\X+1.5,1.15) {\T};
+    % cells
+    \foreach \r in {0,1,2,3}{
+      \foreach \c in {0,1,2,3}{
+        \pgfmathsetmacro{\val}{ifthenelse(\r==\c,\D,\O)}
+        \pgfmathsetmacro{\inten}{min(\val*6,90)}
+        \edef\px{\fpeval{\X+\c}}
+        \edef\py{\fpeval{-\r}}
+        \fill[nxBlue!\inten] (\px,\py) rectangle ++(1,-1);
+        \draw[nxGray!50] (\px,\py) rectangle ++(1,-1);
+        \pgfmathprintnumberto[fixed,precision=1]{\val}{\valtxt}
+        \node[font=\sffamily\scriptsize] at ({\px+0.5},{\py-0.5}) {\valtxt};
+      }
+    }
+    % row labels
+    \foreach \r in {0,1,2,3}{
+      \pgfmathparse{\agents[\r]}\edef\al{\pgfmathresult}
+      \node[rowlbl] at (\X-0.1,{-\r-0.5}) {\al};
+    }
+    % col labels
+    \foreach \c in {0,1,2,3}{
+      \pgfmathparse{\dims[\c]}\edef\dl{\pgfmathresult}
+      \node[collbl] at ({\X+\c+0.35},0.15) {\dl};
+    }
+    % diagonal-mass annotation
+    \node[font=\sffamily\scriptsize\itshape,nxBlue] at (\X+1.5,-4.6) {\tag};
+  }
+
+  % ===== shared note =====
+  \node[font=\sffamily\scriptsize,align=center,nxGray] at (5.3,-5.6)
+        {uniform $-10$\,pp diagonal gap (joint mediation signature);
+         per-cell values illustrative, diagonal mass exact};
+\end{tikzpicture}

@@ -1,0 +1,57 @@
+% Figure 5.2: how the F6 trade-off emerges from PMA constraint composition.
+\begin{tikzpicture}[nx,
+  sig/.style={draw=nxBlue,thick,rounded corners=3pt,fill=nxBlueBg,
+              align=center,font=\sffamily\footnotesize,
+              minimum width=3.4cm,minimum height=0.9cm},
+  con/.style={draw=nxGreen,thick,rounded corners=3pt,fill=nxGreenBg,
+              align=center,font=\sffamily\footnotesize,
+              minimum width=4.6cm,minimum height=1.0cm},
+  res/.style={draw=nxRed,thick,rounded corners=3pt,fill=nxRedBg,
+              align=center,font=\sffamily\footnotesize,
+              minimum width=6.0cm,minimum height=0.9cm},
+  mod/.style={-{Latex[length=2.2mm]},thick},
+  flow/.style={-{Latex[length=2.4mm]},thick,nxGray},
+]
+  % ---- top: conflict announcement signals ----
+  \node[sig] (ann) at (0,4.3)
+        {\textbf{Conflict announcement}\\[1pt]
+         \nxsmall is\_rush $=$ True \quad health $=0.45$ \quad budget $=0.1$};
+
+  % ---- middle: two PMA constraints with base weights ----
+  \node[con] (imm) at (-3.4,2.3)
+        {\texttt{force\_IMMEDIATE}\\\nxsmall base weight $w_I$};
+  \node[con] (pln) at ( 3.4,2.3)
+        {\texttt{prefer\_PLANNED}\\\nxsmall base weight $w_P < w_I$};
+
+  \draw[flow] (ann) -- (imm);
+  \draw[flow] (ann) -- (pln);
+
+  % ---- modulators ----
+  \node[font=\sffamily\scriptsize,nxOrange,align=center] (prio)
+        at (0,1.25) {priority multiplier $\times 5$\\(applies to \emph{both})};
+  \node[font=\sffamily\scriptsize,nxRed,align=center] (bud)
+        at (-3.4,1.05) {budget discount\\$\times 0.2$ (IMMEDIATE only)};
+
+  \draw[mod,nxOrange] (prio) to[bend left=12] (imm.south);
+  \draw[mod,nxOrange] (prio) to[bend right=12] (pln.south);
+  \draw[mod,nxRed]    (bud) -- (imm.south-|-3.4,1.05);
+
+  % ---- effective weights ----
+  \node[con,fill=white,draw=nxGray] (effi) at (-3.4,-0.5)
+        {effective $\approx 5\!\cdot\!0.2\,w_I = w_I$};
+  \node[con,fill=white,draw=nxGreen,line width=1pt] (effp) at (3.4,-0.5)
+        {effective $\approx 5\,w_P$};
+  \draw[flow] (imm) -- (effi);
+  \draw[flow] (pln) -- (effp);
+
+  % ---- inversion note ----
+  \node[font=\sffamily\scriptsize\itshape,nxGreen,align=center] at (0,-1.55)
+        {weight ordering inverts: PLANNED now heaviest in PMA's bid set};
+
+  % ---- result ----
+  \node[res] (out) at (0,-2.7)
+        {Mediator selects the bid combination whose joint region
+         admits \textbf{maint\_window $=$ PLANNED}};
+  \draw[flow,nxRed] (effp) -- (out);
+  \draw[flow,nxRed] (effi) -- (out);
+\end{tikzpicture}

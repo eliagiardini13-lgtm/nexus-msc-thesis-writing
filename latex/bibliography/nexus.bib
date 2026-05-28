@@ -574,7 +574,83 @@
 }
 
 % ============================================================
-%  2b. MACHINE CRITICALITY & EQUIPMENT HIERARCHY
+%  2b. INDUSTRIAL CASE STUDIES (MES / Integrated Planning)
+% ============================================================
+
+% [ABSTRACT] — Kumar, Purohit, Manjrekar, Singh & Lad 2018 (IJPR):
+%              Industrial case study (automotive plant) on the value of
+%              integrated operations planning: simultaneous determination
+%              of job sequencing, batch-sizing, inventory, and preventive
+%              maintenance scheduling. Reports substantial economic
+%              improvement vs. conventional decoupled planning.
+%              International Journal of Production Research, top venue.
+%              Use: Chapter 1 / Chapter 2 — cite as industrial evidence
+%              that joint cross-functional scheduling delivers measurable
+%              value over sequential planning; automotive sector context
+%              matches NEXUS industrial target environment
+@article{kumar2018integrated,
+  author  = {Kumar, Sandeep and Purohit, Bhushan S. and
+             Manjrekar, Vikas and Singh, Vivek and Lad, Bhupesh Kumar},
+  title   = {Investigating the Value of Integrated Operations Planning:
+             A Case-Based Approach from Automotive Industry},
+  journal = {International Journal of Production Research},
+  year    = {2018},
+  volume  = {56},
+  number  = {22},
+  pages   = {6971--6992},
+  doi     = {10.1080/00207543.2018.1424367}
+}
+
+% [ABSTRACT] — Bachhav, Patil, Jadhav & Kene 2025 (IJBAS):
+%              Green-field automotive stamping plant case study:
+%              MES deployed from inception (ISA-95 Level 3 context).
+%              7-month longitudinal evaluation: OEE from 47.17% to 72.36%,
+%              changeover duration reduced by 37.5%, defect rate from
+%              8.22% to 1.93%. Demonstrates that integrated digital
+%              traceability from production start accelerates digital
+%              maturity and operational consistency.
+%              Use: Chapter 1 / Chapter 2 — cite as recent industrial
+%              evidence for MES-driven quality and OEE improvement;
+%              defect rate reduction directly motivates QCA objective
+%              in NEXUS; ISA-95 deployment context mirrors NEXUS architecture
+@article{bachhav2025mes,
+  author  = {Bachhav, Piyush Dipak and Patil, Sudhir Madhav and
+             Jadhav, Mitesh Shashikant and Kene, Harsh Dilip},
+  title   = {Leveraging {MES} Integration for Operational Excellence
+             in a Green Field Automotive Stamping Plant: A Digital
+             Transformation Case Study},
+  journal = {International Journal of Basic and Applied Sciences},
+  year    = {2025},
+  volume  = {14},
+  number  = {4},
+  pages   = {808--817},
+  doi     = {10.14419/033gde10}
+}
+
+% [ABSTRACT] — Safra, Ghachem, Benabdallah, Albalawi & Kolsi 2024 (Heliyon):
+%              Integrated operations planning model for automotive wiring
+%              manufacturing: synchronizes production scheduling and
+%              inventory flows across supply chain; models supplier
+%              capacity constraints for raw wiring materials across
+%              multiple automotive OEM customers.
+%              Heliyon (Elsevier open access, Q2).
+%              Use: Chapter 2 / Chapter 3 — cite as industrial case
+%              combining production scheduling + supply chain coordination
+%              in automotive manufacturing; supports SCA agent design
+%              and supplier capacity contention scenario in DD-V5-015
+@article{safra2024wiring,
+  author  = {Safra, Imen and Ghachem, Kaouther and Benabdallah, Faiza
+             and Albalawi, Hind and Kolsi, Lioua},
+  title   = {Integrated Operations Planning Model for the Automotive
+             Wiring Industry},
+  journal = {Heliyon},
+  year    = {2024},
+  pages   = {e31820},
+  doi     = {10.1016/j.heliyon.2024.e31820}
+}
+
+% ============================================================
+%  2c. MACHINE CRITICALITY & EQUIPMENT HIERARCHY
 % ============================================================
 
 % [ABSTRACT] — Molenaers, Baets, Pintelon & Waeyenbergh 2012 (IJPE):
@@ -1929,151 +2005,4 @@
   number  = {12},
   pages   = {1--31},
   doi     = {10.1145/3572895}
-}
-
-% ============================================================
-%  12. INDUSTRIAL FJSP EXTENSIONS (DD-V5-022 / DD-V5-023)
-%      Literature grounding the industrial automotive benchmark:
-%      multi-action FJSP, sequence-dependent setups, worker and
-%      maintenance-budget constraints, and the NSGA-III comparator.
-% ============================================================
-
-% [CITED] — Lei et al. 2022 (Expert Systems with Applications):
-%              End-to-end multi-action deep RL framework for FJSP; an
-%              agent jointly controls a job-operation policy and a
-%              machine policy (multi-Markov decision process).
-%              Use: Chapters 5-6 — multi-action FJSP grounding for the
-%              DD-V5-022 multi-product-mix feature. Metadata web-verified.
-@article{lei2022multiactionfjsp,
-  author  = {Lei, Kun and Guo, Peng and Zhao, Wenchao and Wang, Yi
-             and Qian, Linmao and Meng, Xiangyin and Tang, Liansheng},
-  title   = {A Multi-action Deep Reinforcement Learning Framework for
-             Flexible Job-shop Scheduling Problem},
-  journal = {Expert Systems with Applications},
-  year    = {2022},
-  volume  = {205},
-  pages   = {117796},
-  doi     = {10.1016/j.eswa.2022.117796}
-}
-
-% [CITED] — Han et al. 2021 (Expert Systems with Applications):
-%              Multi-objective evolutionary algorithms with heuristic
-%              decoding for the hybrid flow shop scheduling problem
-%              under worker constraints.
-%              Use: Chapters 5-6 — worker/resource-constraint grounding
-%              for the DD-V5-022 resource-constraint feature.
-%              Metadata Crossref-verified.
-@article{han2021hfsp,
-  author  = {Han, Wenwu and Deng, Qianwang and Gong, Guiliang and
-             Zhang, Like and Luo, Qiang},
-  title   = {Multi-objective Evolutionary Algorithms with Heuristic
-             Decoding for Hybrid Flow Shop Scheduling Problem with
-             Worker Constraint},
-  journal = {Expert Systems with Applications},
-  year    = {2021},
-  volume  = {168},
-  pages   = {114282},
-  doi     = {10.1016/j.eswa.2020.114282}
-}
-
-% [CITED] — Azzouz et al. 2017 (Procedia Computer Science, KES 2017):
-%              Self-adaptive hybrid metaheuristic (GA + VNS + ILS) for
-%              the FJSP with sequence-dependent setup times.
-%              Use: Chapters 5-6 — grounding for the DD-V5-022
-%              sequence-dependent setup-time feature.
-%              Metadata Crossref-verified.
-@article{azzouz2017sequencesetup,
-  author  = {Azzouz, Ameni and Ennigrou, Meriem and Ben Said, Lamjed},
-  title   = {A Self-adaptive Hybrid Algorithm for Solving Flexible
-             Job-shop Problem with Sequence-dependent Setup Time},
-  journal = {Procedia Computer Science},
-  year    = {2017},
-  volume  = {112},
-  pages   = {457--466},
-  doi     = {10.1016/j.procs.2017.08.023}
-}
-
-% [CITED] — Wang & Yu 2010 (Computers & Industrial Engineering):
-%              Filtered-beam-search heuristic for the FJSP with
-%              maintenance activities and maintenance-resource limits.
-%              Use: Chapters 5-6 — cost-/maintenance-aware FJSP
-%              grounding for the DD-V5-022 maintenance-budget feature.
-%              Metadata Crossref-verified.
-@article{wang2010pmcost,
-  author  = {Wang, Shijin and Yu, Jianbo},
-  title   = {An Effective Heuristic for Flexible Job-shop Scheduling
-             Problem with Maintenance Activities},
-  journal = {Computers \& Industrial Engineering},
-  year    = {2010},
-  volume  = {59},
-  number  = {3},
-  pages   = {436--447},
-  doi     = {10.1016/j.cie.2010.05.016}
-}
-
-% [CITED] — Wang et al. 2020 (IEEE SSCI 2020):
-%              A tailored NSGA-III instantiation for multi-objective
-%              flexible job shop scheduling.
-%              Use: Chapter 5 — NSGA-III centralized comparator
-%              (Centralization Comparison). Metadata Crossref-verified.
-%              NOTE: DD-V5-021 design notes cited this as
-%              "Wang, M. & Pan, X. (2020)"; that author attribution
-%              could not be verified. This verified Wang et al. (Leiden
-%              group) paper matches the described content (custom
-%              NSGA-III for FJSP, 2020) and is used instead --- confirm
-%              the intended reference.
-@inproceedings{wang2020nsga3fjsp,
-  author    = {Wang, Yali and van Stein, Bas and B{\"a}ck, Thomas
-               and Emmerich, Michael},
-  title     = {A Tailored {NSGA-III} for Multi-objective Flexible
-               Job Shop Scheduling},
-  booktitle = {2020 IEEE Symposium Series on Computational
-               Intelligence (SSCI)},
-  year      = {2020},
-  pages     = {2746--2753},
-  doi       = {10.1109/SSCI47803.2020.9308373}
-}
-
-% [UNVERIFIED] — Nguyen et al. 2014, joint maintenance-budget models.
-%   Cited in DD-V5-022 design notes (maintenance-budget-cap feature).
-%   Could NOT be located via Crossref / Google Scholar; the closest
-%   located work is Nguyen & Bagajewicz (2008) on PM scheduling.
-%   TODO: DOI verification needed --- confirm the intended reference
-%   and full metadata before citing.
-@misc{nguyen2014maintenancebudget,
-  author = {Nguyen and others},
-  title  = {Joint Maintenance-budget Allocation Models for
-            Production Systems},
-  year   = {2014},
-  note   = {Unverified reference carried over from DD-V5-022 design
-            notes; bibliographic metadata to be confirmed before citing}
-}
-
-% [UNVERIFIED] — Brunetti & Sridhar 2016, multi-objective FJSP tardiness.
-%   Cited in DD-V5-022 design notes (due-date / tardiness-penalty
-%   feature). Could NOT be located via Crossref / Google Scholar.
-%   TODO: DOI verification needed --- confirm the intended reference
-%   and full metadata before citing.
-@misc{brunetti2016tardiness,
-  author = {Brunetti and Sridhar},
-  title  = {Multi-objective Flexible Job-shop Scheduling with
-            Due-date and Tardiness Objectives},
-  year   = {2016},
-  note   = {Unverified reference carried over from DD-V5-022 design
-            notes; bibliographic metadata to be confirmed before citing}
-}
-
-% [UNVERIFIED] — Forrester 2008, industrial demand variability.
-%   Cited in DD-V5-022 design notes (rush-order fraction). Could NOT be
-%   located as a 2008 publication; "Forrester effect" demand
-%   amplification traces to Forrester's Industrial Dynamics (1961).
-%   TODO: DOI verification needed --- confirm the intended reference
-%   (the year may be incorrect) before citing.
-@misc{forrester2008demand,
-  author = {Forrester},
-  title  = {Demand Variability and Order Amplification in
-            Industrial Production},
-  year   = {2008},
-  note   = {Unverified reference carried over from DD-V5-022 design
-            notes; year and metadata to be confirmed before citing}
 }

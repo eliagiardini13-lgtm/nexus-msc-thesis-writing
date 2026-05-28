@@ -1,0 +1,42 @@
+% Figure 5.6: per-cell NEXUS alignment ratio against the CUSO ceiling.
+% y zoomed to [0.94, 1.00]; y_cm = (val-0.94)*60  (0.06 -> 3.6 cm)
+\begin{tikzpicture}[nx]
+  \def\base{0.94}
+  % ---- y-axis ticks + gridlines ----
+  \foreach \a in {0.94,0.96,0.98,1.00}{
+    \pgfmathsetmacro{\y}{(\a-\base)*60}
+    \draw[nxGray!35] (-0.5,\y) -- (12.4,\y);
+    \node[font=\sffamily\scriptsize,nxGray,left] at (-0.55,\y) {\a};
+  }
+  \draw[-{Latex[length=2mm]},nxGray] (-0.5,0) -- (-0.5,4.2);
+  \node[font=\sffamily\scriptsize,nxGray,rotate=90] at (-1.4,1.8)
+        {alignment ratio (NEXUS / CUSO)};
+  \node[font=\sffamily\scriptsize\itshape,nxGray] at (0.2,-0.95) {(y-axis zoomed)};
+
+  % ---- bars: index / value / label ----
+  \foreach \i/\v/\lbl in {
+      0/0.954/Mk06, 1/0.948/Mk10,
+      2/0.976/{med\_low}, 3/0.977/{med\_med}, 4/0.980/{med\_high},
+      5/0.984/{lrg\_low}, 6/0.986/{lrg\_med}, 7/0.984/{lrg\_high}}{
+    \pgfmathsetmacro{\x}{\i*1.5}
+    \pgfmathsetmacro{\h}{(\v-\base)*60}
+    \fill[nxBlue!75] ({\x-0.3},0) rectangle ({\x+0.3},\h);
+    \node[font=\sffamily\scriptsize,nxBlue,above] at (\x,\h) {\v};
+    \node[font=\sffamily\scriptsize,nxGray,rotate=40,anchor=north east]
+          at ({\x+0.15},-0.15) {\lbl};
+  }
+
+  % ---- threshold + mean lines ----
+  \pgfmathsetmacro{\thr}{(0.945-\base)*60}
+  \pgfmathsetmacro{\mn}{(0.974-\base)*60}
+  \draw[nxRed,thick,dashed] (-0.5,\thr) -- (11.3,\thr);
+  \node[font=\sffamily\scriptsize,nxRed,right] at (11.3,\thr)
+        {AL threshold $0.945$};
+  \draw[nxGreen,thick,densely dotted] (-0.5,\mn) -- (11.3,\mn);
+  \node[font=\sffamily\scriptsize,nxGreen,right] at (11.3,\mn)
+        {mean $0.974$};
+
+  % ---- verdict ----
+  \node[font=\sffamily\footnotesize\bfseries,nxGreen] at (5.5,4.0)
+        {AL PASS 8 / 8 cells};
+\end{tikzpicture}

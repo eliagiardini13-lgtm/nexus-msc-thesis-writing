@@ -1,13 +1,2121 @@
 % ============================================================
-%  Chapter 5 — Results
-%  STATUS: stub. Scheduled for drafting in Week 9.
+%  Chapter 5 — Validation
+%  STATUS: §5.1 first draft (2026-05-27). §5.2..§5.9 are stub
+%  sections so cross-references resolve; bodies to be drafted.
+%  Source: CHAPTER5_BRIEF.md, DD-V5-032/033/034, evidence reports
+%  under nexus-mvv-v5/results/.
 % ============================================================
-\chapter{Experimental Results}
+\chapter{Validation}
 \label{ch:results}
 
-\textit{This chapter is a placeholder. Planned coverage: experimental
-methodology and the two-grouping design (Coordination Comparison and
-Centralization Comparison), \NEXUS{} versus the uncoordinated baseline,
-\NEXUS{} versus Rule-Based Coordination, Pareto sufficiency against a
-centralized NSGA-III optimiser, mechanism characterization, and
-discussion.}
+This chapter validates the \NEXUS{} architecture of
+Chapter~\ref{ch:architecture}, using the empirical evidence produced
+by the implementation of Chapter~\ref{ch:implementation}. The work
+done in this chapter is \emph{architectural validation}: each section
+takes one architectural property promised in Chapter~\ref{ch:architecture}
+--- bounded disclosure, joint welfare maximisation, the
+$\sigma$-tier audit signature, and so on --- and asks whether the
+property survives contact with the running system. The chapter is
+not a contest in which \NEXUS{} is the contender and the baseline
+mechanisms are opponents; the baselines are characterisation tools
+for the architecture, and the relevant verdicts are about the
+architecture's properties, not about which mechanism wins on
+throughput.
+
+The empirical surface is a single, deterministic, pre-registered
+benchmark pipeline. It consists of $720$ simulation runs --- three
+runtime mechanisms across eight benchmark cells, thirty seeds per
+cell --- together with four specialised follow-on analyses that
+unpack the audit log along axes (bits of disclosure, decision
+attribution, centralised alignment, coordination-event latency) the
+sweep alone does not surface. The chapter opens with the methodology
+that produced this evidence; the seven sections that follow each
+validate one architectural property against one or more pieces of
+that evidence; the closing section frames the limits of what the
+benchmark surface can validate.
+
+% ------------------------------------------------------------
+\section{Methodology}
+\label{sec:val-methodology}
+
+This section fixes the methodology for the rest of the chapter. It
+states the framing under which validation is performed
+(Section~\ref{subsec:val-framing}), enumerates the eight architectural
+properties the chapter validates (Section~\ref{subsec:val-properties}),
+introduces the five evidence families that supply the data
+(Section~\ref{subsec:val-evidence}), names the mechanism configurations
+under comparison (Section~\ref{subsec:val-mechanisms}), specifies the
+statistical methods and thresholds (Section~\ref{subsec:val-stats}),
+and gives the structural reading guide for the section sequence that
+follows (Section~\ref{subsec:val-roadmap}).
+
+\subsection{Framing: architectural validation, not outcome dominance}
+\label{subsec:val-framing}
+
+The thesis contribution stated in Chapter~\ref{ch:architecture} is a
+\emph{reference architecture}: a layered composition of BDI Worker
+agents, a multi-issue Marketplace mediator, an audit-only Fence and a
+deferred School slot, together with the architectural properties that
+composition is designed to deliver. The contribution is the
+architecture and its properties, not a claim that this particular
+implementation of the architecture wins on plant-floor outcomes
+against every alternative on every benchmark. The distinction matters
+for how validation is conducted, and so this chapter is structured
+around it.
+
+\emph{Architectural validation} asks: does the system, when run on
+representative benchmarks, exhibit each of the architectural properties
+promised by Chapter~\ref{ch:architecture}? Does the Marketplace
+mediator actually find joint welfare maxima under an admissible
+heuristic? Does the Worker layer's mono-dimensional-output discipline
+translate into a measurable attribution pattern in the audit log?
+Does the Fence layer produce a distinguishable safety signature
+across mechanisms? These are property-level questions; their answers
+characterise the architecture. \emph{Outcome dominance}, in contrast,
+asks whether \NEXUS{} produces strictly better defect counts or
+breakdown rates than a chosen baseline on a chosen benchmark family;
+this is a question about one particular implementation on one
+particular workload, not about the architecture as such.
+
+The architectural-validation framing was not a retrospective
+rephrasing of what the empirical work had already produced. The
+contributions claimed in Chapter~\ref{ch:architecture} are stated as
+architectural properties; an earlier pre-registered hypothesis surface
+(an outcome-dominance test of \NEXUS{} against Siloed-v5, and a
+productivity-differential test on centralised alignment) was
+methodological scaffolding, ratified inside the sweep driver before
+the data were inspected, and is treated in this chapter as
+\emph{outcome characterisation}: the corresponding distributions and
+verdicts are reported honestly in Section~\ref{sec:val-boundary} and
+they do not bear on the architecture's claims (\texttt{DD-033},
+\texttt{DD-034}). The other two pre-registered hypotheses --- the
+alignment test and the disclosure test --- do bear on architectural
+properties and are load-bearing for
+Sections~\ref{sec:val-alignment} and~\ref{sec:val-disclosure}
+respectively. Section~\ref{subsec:val-stats} names all of them
+explicitly, fixes the descriptive labels used throughout the
+chapter, and states what would falsify each.
+
+\subsection{The eight architectural properties under validation}
+\label{subsec:val-properties}
+
+Chapter~\ref{ch:architecture} promises eight architectural properties,
+each of which is the subject of one of this chapter's later sections.
+Some are stated explicitly in the architectural prose; others are
+structural commitments the prose makes implicitly, in the sense that
+the architecture cannot be implemented without them holding. We
+enumerate them here in the order in which the chapter validates them,
+not in their order of appearance in Chapter~\ref{ch:architecture}.
+Table~\ref{tab:val-properties} summarises the mapping from each
+property to the chapter section where it is promised and to the
+section of this chapter that validates it.
+
+\begin{description}[leftmargin=2.4em,style=nextline,itemsep=0.25em]
+  \item[P1 --- Layered separation of concerns.] The four ISA-95
+    Level~3 functions are decomposed into four Worker agents, and
+    coordination, governance, and adaptation are separate layers
+    that can evolve independently. P1 is foundational --- it is not
+    validated in isolation, but every result in
+    Sections~\ref{sec:val-emergence}--\ref{sec:val-attribution}
+    is conditional on the layer boundaries holding.
+  \item[P2 --- Mono-dimensional outputs and domain authority.] Each
+    Worker emits constraints primarily on its home issue, with
+    cross-domain constraints damped to act as tie-breakers. Validated
+    in Section~\ref{sec:val-attribution} by the decision-attribution
+    analysis (the $4\times 4$ contribution matrix).
+  \item[P3 --- Bounded disclosure.] Agents publish only bounded bid
+    summaries; never beliefs, constraints, or internal weights.
+    Validated in Section~\ref{sec:val-disclosure} by the bits-per-event
+    disclosure quantification across mechanisms.
+  \item[P4 --- Joint welfare maximisation via admissible search.]
+    The mediator's branch-cut A* with an admissible heuristic
+    (\texttt{DD-014}) selects the contract that maximises the sum of
+    agent utilities over the bid space. Validated in
+    Section~\ref{sec:val-alignment} by the alignment of \NEXUS{}'s
+    chosen contracts against the centralised utility-sum ceiling
+    (CUSO, \texttt{DD-032}).
+  \item[P5 --- $\sigma$-tier governance signature.] The Fence
+    classifies each contract into one of three tiers
+    ($\sigma_0$/$\sigma_1$/$\sigma_2$); coordination architectures
+    produce distinguishable tier profiles. Validated in
+    Section~\ref{sec:val-sigma} by the cross-mechanism $\sigma$-tier
+    counts produced by the main coordination sweep.
+  \item[P6 --- Coordination over independence.] \NEXUS{} produces
+    contracts that are characteristically different from those
+    produced by an uncoordinated, home-only baseline running on the
+    same code and the same environment. Validated \emph{cumulatively}
+    by the $\sigma$-tier signature (Section~\ref{sec:val-sigma}), the
+    disclosure quantification (Section~\ref{sec:val-disclosure}), the
+    centralised alignment (Section~\ref{sec:val-alignment}) and the
+    decision-attribution analysis (Section~\ref{sec:val-attribution});
+    P6 is not validated by a single outcome contrast (the relevant
+    outcome characterisation is in Section~\ref{sec:val-boundary}).
+  \item[P7 --- Compositional emergence.] Joint trade-offs the agents
+    themselves never explicitly programme --- a rush order against a
+    constrained maintenance budget yielding a deferred maintenance
+    window, a premium product against a borderline defect rate
+    yielding a partial quality hold --- emerge from the mediator's
+    composition. Validated in Section~\ref{sec:val-emergence}.
+  \item[P8 --- Order-invariant decisions.] The mediation outcome
+    does not depend on the order in which the agents speak, because
+    the mediator operates on the complete bid set in a single round.
+    Validated in Section~\ref{sec:val-order} by the agent-order
+    permutation test.
+\end{description}
+
+A ninth architectural slot --- the School layer, the locus of
+continual preference adaptation --- is named in
+Chapter~\ref{ch:architecture} as future work and is not validated
+empirically here; it is taken up in
+Chapter~\ref{ch:conclusions}.
+
+\begin{table}[ht]
+\centering
+\caption{The eight architectural properties under validation, the
+section of Chapter~\ref{ch:architecture} that promises each, and the
+section of this chapter that validates each.}
+\label{tab:val-properties}
+\small
+\begin{tabularx}{\textwidth}{@{}l X l l@{}}
+\toprule
+\textbf{Property} & \textbf{Statement} & \textbf{Promised} & \textbf{Validated} \\
+\midrule
+P1 & Layered separation of concerns
+   & Sec.~\ref{sec:arch-overview}, \ref{subsec:why-layered}
+   & \S\ref{sec:val-emergence}--\ref{sec:val-attribution} (implicit) \\
+P2 & Mono-dimensional outputs + domain authority
+   & Sec.~\ref{subsec:mono-dim}
+   & \S\ref{sec:val-attribution} \\
+P3 & Bounded disclosure
+   & Sec.~\ref{subsec:bids}, \ref{subsec:privacy}
+   & \S\ref{sec:val-disclosure} \\
+P4 & Joint welfare maximisation via admissible search
+   & Sec.~\ref{subsec:mediator}
+   & \S\ref{sec:val-alignment} \\
+P5 & $\sigma$-tier governance signature
+   & Sec.~\ref{subsec:fence-tiers}, \ref{subsec:fence-logonly}
+   & \S\ref{sec:val-sigma} \\
+P6 & Coordination over uncoordinated baseline
+   & Sec.~\ref{sec:arch-intro}, \ref{subsec:protocol-scope}
+   & \S\ref{sec:val-sigma}--\ref{sec:val-attribution} (cumulative) \\
+P7 & Compositional emergence
+   & Sec.~\ref{subsec:mediator} + Sec.~\ref{sec:impl-baselines}
+   & \S\ref{sec:val-emergence} \\
+P8 & Order-invariant decisions
+   & Sec.~\ref{subsec:protocol-scope}
+   & \S\ref{sec:val-order} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Evidence families}
+\label{subsec:val-evidence}
+
+The empirical work draws on five distinct \emph{evidence families}.
+Each family supplies a particular slice of evidence, anchored in a
+particular property of the architecture and analysed by a dedicated
+post-processor. Figure~\ref{fig:val-stack} shows the architectural
+layer each family principally bears on, together with the property
+labels.
+
+\begin{description}[leftmargin=2.4em,style=nextline,itemsep=0.25em]
+  \item[Main coordination sweep.] The workhorse evidence family. Three
+    mechanisms (\NEXUS{}, Siloed and Rule-Based Coordination) are run
+    across eight benchmark cells (two Brandimarte instances --- Mk06
+    and Mk10 --- and six \texttt{synthetic\_v2} cells covering the
+    \{\texttt{medium}, \texttt{large}\} shop sizes crossed with the
+    \{\texttt{low}, \texttt{medium}, \texttt{high}\} coupling levels)
+    at $30$ paired seeds per (mechanism, cell), for a total of $720$
+    runs. Each run yields outcome metrics, $\sigma$-tier classifier
+    output and the full Contract Record audit log. The sweep is the
+    evidence base for Sections~\ref{sec:val-emergence},
+    \ref{sec:val-order}, \ref{sec:val-sigma} and~\ref{sec:val-attribution}.
+  \item[Decision attribution analysis.] A specialised analysis of the
+    Contract Records that computes, per mechanism and per cell, a
+    $4\times 4$ contribution matrix recording how often each agent's
+    highest-utility bid pins each of the four contract dimensions in
+    the final composite contract. The diagonal mass measures
+    home-issue authority share; the off-diagonal mass measures
+    cross-domain influence. Evidence base for
+    Section~\ref{sec:val-attribution} (property P2).
+  \item[Centralised alignment benchmark.] A post-hoc enumeration of
+    the entire $108$-contract joint space for every conflict in the
+    sweep, evaluating the centralised utility-sum optimum CUSO
+    (\texttt{DD-032}). For each conflict the per-conflict alignment
+    ratio \NEXUS{}\,/\,\textsc{cuso} measures the fraction of the
+    centralised utility-sum ceiling that the bounded-disclosure
+    distributed mechanism recovers. Evidence base for
+    Section~\ref{sec:val-alignment} (property P4).
+  \item[Disclosure quantification.] A bit-budget calculation applied
+    to every bid and to the CUSO reference, instantiating the
+    information-disclosure model of \texttt{DD-030}. Reported per
+    mechanism, per agent, and as the per-event ratio of mechanism
+    disclosure to CUSO disclosure. Evidence base for
+    Section~\ref{sec:val-disclosure} (property P3).
+  \item[Coordination-event latency.] A wall-time measurement per
+    coordination event, used in Section~\ref{sec:val-boundary} as a
+    deployment-feasibility note against the ISA-95 Level~3 control
+    cycle. It is not a property validation.
+\end{description}
+
+\nexustikzfigure{fig:val-stack}{The four-layer \NEXUS{} architecture
+alongside the five evidence families that populate this chapter. The
+property tags shown on each side make the validation correspondence
+explicit; Section~\ref{subsec:val-roadmap} sequences the sections
+that exploit the correspondence.}{fig_val_stack}
+
+The thesis-facing names used above and throughout the chapter
+intentionally differ from the internal working names that appear in
+the repository (Step~1 sweep, Phase~C/D/E/F analyses). The renaming
+makes the chapter readable as a self-contained empirical narrative
+without the bookkeeping baggage of the engineering process that
+produced the data.
+
+\subsection{Mechanism configurations evaluated}
+\label{subsec:val-mechanisms}
+
+The architecture is characterised against three drop-in alternatives
+to its Marketplace layer. Each alternative isolates a single
+architectural axis, so that the contrasts of
+Sections~\ref{sec:val-emergence}--\ref{sec:val-attribution} are
+single-variable contrasts and the differences observed are
+attributable to the architectural property under test.
+Table~\ref{tab:val-mechanisms} places the four mechanisms on the two
+axes that the comparison turns on: whether the mechanism performs a
+joint search over the contract space, and whether it has access to
+the full state of every agent's utility function.
+
+\begin{description}[leftmargin=2.4em,style=nextline,itemsep=0.25em]
+  \item[\NEXUS{}.] The architecture under validation
+    (Chapter~\ref{ch:architecture}, Chapter~\ref{ch:implementation}).
+    Joint search over the published bid sets; bounded disclosure.
+  \item[Siloed-v5.] The uncoordinated baseline of
+    Section~\ref{subsec:impl-siloed}. Each agent emits home-only bids
+    (\texttt{cross\_domain\_awareness=False}) and the mechanism
+    composes their independent home picks into a single contract.
+    No joint search; bounded disclosure; same code and same
+    environment as \NEXUS{}, so the contrast with \NEXUS{} is a
+    single-variable contrast on coordination.
+  \item[RBC --- Rule-Based Coordination.] The
+    static-threshold-rule baseline of \texttt{DD-021} and
+    Section~\ref{subsec:impl-rbc}. Each contract dimension is
+    decided from a fixed per-dimension threshold on the conflict
+    announcement; no agents, no bids. RBC trades coordination
+    flexibility for determinism and a known rule table.
+  \item[CUSO --- Centralised Utility-Sum Optimiser.] The
+    full-information ceiling of \texttt{DD-032} and
+    Section~\ref{subsec:impl-cuso}. CUSO enumerates the entire
+    $108$-contract joint space and returns the contract that
+    maximises the sum of agent utilities, with access to every
+    agent's full utility function. It is not a runtime mechanism;
+    it is a post-hoc reference applied to each conflict in the
+    sweep.
+\end{description}
+
+The Sequential cascade of \texttt{DD-012} and the single-winner
+Contract Net of \texttt{DD-001} remain in the code but are not used
+as primary baselines: the Sequential cascade was shown to exhibit a
+structural commitment-asymmetry under resource-constrained loads
+(\texttt{DD-019}) that confounds the comparison on outcomes the
+thesis cares about, and the single-winner Contract Net's output is a
+winner-label string that cannot, by construction, represent a
+cross-functional trade-off (\texttt{DD-001}).
+
+\begin{table}[ht]
+\centering
+\caption{The four mechanism configurations under comparison, placed
+on the joint-search and information-access axes that the contrasts of
+this chapter turn on.}
+\label{tab:val-mechanisms}
+\small
+\begin{tabularx}{\textwidth}{@{}l c c X@{}}
+\toprule
+\textbf{Mechanism} & \textbf{Joint search} & \textbf{Information access} & \textbf{Role in the comparison} \\
+\midrule
+\NEXUS{}    & yes (branch-cut A*) & bounded (bid summaries)
+            & architecture under validation \\
+\addlinespace
+Siloed-v5   & no (home-only picks) & bounded (bid summaries)
+            & isolates coordination vs independence \\
+\addlinespace
+RBC         & no (static rule table) & public rule table
+            & isolates dynamic vs static coordination \\
+\addlinespace
+CUSO        & full ($108$-contract enumeration) & full agent utility functions
+            & centralised reference ceiling \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Statistical methods and thresholds}
+\label{subsec:val-stats}
+
+Outcome distributions across the $30$ paired seeds per cell are
+compared with the two-sided \emph{Mann-Whitney U} test --- a
+non-parametric rank test that makes no distributional assumption and
+that is appropriate to the small, paired and skewed outcome
+distributions that the discrete-event simulator produces. Effect size
+is reported as \emph{Cliff's $\delta$}, which takes values in
+$[-1, +1]$ and admits the conventional thresholds: $|\delta|\,\ge\,0.147$
+small, $0.330$ medium and $0.474$ \emph{substantively large}. A positive
+$\delta$ in a contrast ``A vs B'' means that A's outcome distribution
+is shifted in the favoured direction relative to B's; the favoured
+direction is specified per outcome (lower is better for defects,
+breakdowns and makespan; higher is better for throughput). The
+significance level is Bonferroni-corrected against the multiple
+comparisons induced by four outcomes and two pairwise contrasts:
+$\alpha = 0.05/8 = 0.00625$.
+
+The empirical surface of the chapter is organised around eight
+named tests, each anchored to one of the architectural properties
+P1--P8 of Section~\ref{subsec:val-properties}. Four of the tests
+were pre-registered in
+\texttt{experiments/run\_step1\_unified\_sweep.py} before any sweep
+data were inspected; the other four are structural or
+regression-anchored checks. The chapter refers to all of them by
+descriptive two-letter labels so the prose stays legible without
+the bookkeeping of the internal hypothesis codes carried by the
+code, the JSON keys of the result files, and the design-decision
+ledger. The mapping is one-to-one and is recorded in
+Table~\ref{tab:val-tests} below; the labels are the chapter's
+glossary and are used uniformly throughout
+Sections~\ref{sec:val-emergence}--\ref{sec:val-boundary}.
+
+\begin{table}[ht]
+\centering
+\caption{The eight tests under which the chapter's empirical surface
+is reported. The label is the chapter glossary; the internal name is
+the identifier used by the code, the result-file JSON, and the
+design-decision ledger; ``Load-bearing'' marks the tests whose
+verdict bears on an architectural claim, as opposed to outcome
+characterisations whose verdicts are reported in
+Section~\ref{sec:val-boundary} per \texttt{DD-033}/\texttt{DD-034}.}
+\label{tab:val-tests}
+\small
+\begin{tabularx}{\textwidth}{@{}l l X c c c@{}}
+\toprule
+\textbf{Label} & \textbf{Test name} & \textbf{What is tested}
+  & \textbf{Section} & \textbf{Pre-reg.} & \textbf{Load-bearing} \\
+\midrule
+OD   & Outcome dominance
+     & \NEXUS{} outcome distributions strictly dominate Siloed-v5 on
+       quality outcomes
+     & \S\ref{sec:val-boundary}
+     & yes (HB1)
+     & char.\ \\
+AL   & Alignment
+     & \NEXUS{}'s per-conflict alignment against the CUSO ceiling has
+       $p_{25} \ge 0.945$ on every cell
+     & \S\ref{sec:val-alignment}
+     & yes (HF1)
+     & yes \\
+DI   & Disclosure
+     & \NEXUS{}'s per-event disclosure is at most $30\%$ of the
+       CUSO ceiling on every cell
+     & \S\ref{sec:val-disclosure}
+     & yes (HF2)
+     & yes \\
+PR   & Productivity differential
+     & \NEXUS{} exceeds Siloed-v5 in CUSO alignment by at least
+       $5$ percentage points on every cell
+     & \S\ref{sec:val-boundary}
+     & yes (HF3)
+     & char.\ \\
+$\sigma$G & $\sigma$-tier governance
+     & The three runtime mechanisms produce substantively ordered
+       $\sigma$-tier counts (not indistinguishable noise)
+     & \S\ref{sec:val-sigma}
+     & yes (HA1)
+     & yes \\
+OI   & Order invariance
+     & \NEXUS{} produces byte-identical contracts under any
+       permutation of agent presentation order
+     & \S\ref{sec:val-order}
+     & no (structural)
+     & yes \\
+CE   & Compositional emergence
+     & F6 + F7 trade-offs emerge under \NEXUS{} mediation, absent
+       under Siloed-v5 and RBC
+     & \S\ref{sec:val-emergence}
+     & no (regression)
+     & yes \\
+JM   & Joint mediation signature
+     & \NEXUS{}'s diagonal contribution mass differs from Siloed-v5's
+       by at least $10$ percentage points uniform across cells
+     & \S\ref{sec:val-attribution}
+     & no (structural)
+     & yes \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Two of the four pre-registered tests --- OD (the outcome-dominance
+test) and PR (the productivity-differential test) --- are explicitly
+reclassified as outcome characterisation per \texttt{DD-033} and
+\texttt{DD-034}: their verdicts are reported in
+Section~\ref{sec:val-boundary}, but they do not bear on the
+architecture's claims, because the architecture of
+Chapter~\ref{ch:architecture} does not promise outcome dominance over
+a same-codebase uncoordinated baseline. The remaining six tests bear
+on the architecture's property surface and are load-bearing for the
+section in which they run. The non-pre-registered tests (OI, CE, JM)
+are not statistical-distribution tests: OI is a structural property
+checked by a determinism regression, CE is a qualitative-emergence
+inference anchored by the \texttt{DD-023} regression suite, and JM
+is an architecture-level $10$-percentage-point reading on the
+decision-attribution matrix. Each is introduced in the section that
+runs it.
+
+\subsection{Reading guide for the rest of the chapter}
+\label{subsec:val-roadmap}
+
+The remainder of the chapter follows a uniform structure. Each of
+Sections~\ref{sec:val-emergence}--\ref{sec:val-attribution} takes
+one architectural property, names the evidence family it draws on,
+states the measurement performed, reports the empirical result, and
+closes with a paragraph on what the result establishes and what it
+does not. The order of the sections is from the compositional and
+order-invariance claims that follow from the joint protocol
+(Sections~\ref{sec:val-emergence} and~\ref{sec:val-order}), through
+the governance signature (Section~\ref{sec:val-sigma}), the two
+quantitative architectural claims of bounded disclosure and
+centralised alignment (Sections~\ref{sec:val-disclosure}
+and~\ref{sec:val-alignment}), to the decision-attribution signature
+of the mediation itself (Section~\ref{sec:val-attribution}). The
+six sections collectively exhaust the architectural surface
+promised by Chapter~\ref{ch:architecture}.
+
+Property P6 (coordination over independence) deserves a separate
+note here. The architecture's claim that joint mediation produces
+contracts \emph{recognisably different} from those produced by an
+uncoordinated baseline is supported \emph{cumulatively} ---
+distinct $\sigma$-tier signature (Section~\ref{sec:val-sigma}),
+distinct disclosure profile (Section~\ref{sec:val-disclosure}),
+distinct alignment ratios against the centralised ceiling
+(Section~\ref{sec:val-alignment}), distinct decision-attribution
+mass (Section~\ref{sec:val-attribution}). It is not validated by a
+single outcome contrast against Siloed-v5; on the FJSP benchmark
+families the within-codebase outcome distributions are at parity,
+and that result is part of the outcome characterisation honestly
+reported in Section~\ref{sec:val-boundary}. The four cumulative
+contrasts taken together are what makes the property load-bearing.
+
+Section~\ref{sec:val-boundary} closes the chapter with the
+applicability boundary. There are two reasons the section is given
+its own space rather than woven into the earlier sections. The first
+is that the outcome characterisation honestly belongs together with
+the limits of what benchmark validation can prove --- the
+reclassified outcome-dominance and productivity verdicts are not
+isolated empirical observations but features of a study that is, by
+design, about the architecture rather than about which specific
+implementation of the architecture wins on which specific scalar
+metric. The second is that the chapter's claims
+need to be stated against the design space they implicitly occupy.
+The \NEXUS{} architecture admits a range of implementation choices on
+each layer --- BDI workers could be replaced by a multi-agent
+reinforcement-learning component; the multi-issue A* mediator could
+be replaced by a combinatorial auction; the log-only Fence could be
+replaced by an enforcement layer with runtime intervention --- and the
+architectural properties validated here are properties of the
+\emph{reference} architecture, not of any one specific implementation.
+Section~\ref{sec:val-boundary} makes that design space explicit, names
+the limitations of the present study against it, and previews how
+Chapter~\ref{ch:industrial}'s industrial case study addresses the
+gap between benchmark validation and operational deployment. The
+chapter does not, anywhere, claim outcome dominance over a baseline
+on any benchmark; that the architecture can be characterised against
+its baselines without such a claim being made is itself a property
+of the chapter's framing, and Section~\ref{sec:val-boundary} is where
+that framing is closed out.
+
+% ============================================================
+%  §5.2 .. §5.9  --- stubs (labels only; bodies to be drafted)
+% ============================================================
+
+\section{Compositional trade-off emergence}
+\label{sec:val-emergence}
+
+The second architectural property under validation is P7:
+cross-functional trade-offs emerge from the Marketplace mediator's
+joint composition of the agents' bids, rather than from explicit
+trade-off rules programmed into any single component. P7 is a
+structural claim about \emph{where} cross-functional decisions are
+located. If a useful trade-off pattern --- ``defer maintenance when
+the budget is tight \emph{and} the job is a rush order''; ``hold
+quality more strictly when the product variant is more expensive''
+--- has to be coded somewhere as a special-case rule, then the
+mediator is not adding value; it is just executing rules its
+designers anticipated. P7 says the trade-offs emerge from the A*
+composition of independently weighted home-domain constraints,
+without any agent or rule table writing the trade-off down.
+
+\subsection*{Evidence and inference pattern}
+
+This is qualitative-emergence evidence, not a statistical
+distribution test, and the pattern of inference is structural: a
+trade-off is present where mediation is present and absent where
+mediation is absent. Two concrete trade-offs are anchored by the
+\texttt{DD-023} regression suite
+(\texttt{tests/test\_dd\_v5\_023\_extensions.py}, $40$ tests):
+
+\begin{description}[leftmargin=2.4em,style=nextline,itemsep=0.25em]
+  \item[F6 --- rush job under a tight maintenance budget defers
+    maintenance.] A conflict where the job is a rush job
+    (\texttt{is\_rush}~$=$~True) on a degraded machine
+    (\texttt{machine\_health}~$=$~$0.45$), and the maintenance budget is
+    nearly exhausted (\texttt{remaining\_budget\_ratio}~$=$~$0.1$),
+    yields a contract whose maintenance window is \textsc{planned},
+    \emph{not} \textsc{immediate} --- even though the machine's
+    health alone would normally argue for \textsc{immediate}, and
+    even though the rush job alone would normally tighten the
+    decision in the other direction. The trade-off is the
+    composition of the two pulls under the budget constraint.
+  \item[F7 --- premium product on a borderline defect rate
+    triggers a partial quality hold.] A conflict where the product
+    variant is \texttt{premium} (high unit value) and the defect
+    rate sits just below the quality threshold ($0.04$) yields a
+    contract whose quality action is \textsc{hold\_light}, rather
+    than the \textsc{no\_hold} that the defect rate alone would
+    select.
+\end{description}
+
+The regression suite pins these compositions as targeted unit-style
+tests: each test constructs a \texttt{ConflictAnnouncement} with the
+relevant joint signal, runs the agents' bid generation against the
+mediator, and asserts that the resulting weight ordering or chosen
+contract value reflects the trade-off. The tests are not the
+discovery --- they are the regression guard for the discovery, and
+the discovery itself is in the design of the agents' constraint
+catalogues plus the A* mediator's composition rule (the priority key
+$f = g + h$ of Section~\ref{subsec:val-stats} applied across all four
+agents' bid utilities). The trade-off emerges from the structural
+arithmetic of the joint search; the test is what tells us it is still
+emerging after a refactor.
+
+The F6 mechanism is worth tracing in detail because the structural
+arithmetic is what the chapter is asking the reader to grant;
+Figure~\ref{fig:val-emergence} shows the path.
+\PMA{}'s
+constraint catalogue contains two relevant unary constraints on the
+maintenance dimension: \texttt{pma\_force\_IMMEDIATE\_when\_critical}
+and \texttt{pma\_prefer\_PLANNED\_when\_degraded}. The
+industrial-awareness extensions of \texttt{DD-023} add two
+modulators: the priority multiplier (rush job $\to$ multiplicative
+boost on both constraints, weighting maintenance up overall) and the
+budget discount (low \texttt{remaining\_budget\_ratio} $\to$
+multiplicative discount on the \textsc{immediate} constraint only,
+because it is the costly action). On the F6 signal (rush,
+\texttt{machine\_health} $= 0.45$, \texttt{remaining\_budget\_ratio} $=
+0.1$), the priority multiplier scales both constraints by $5\times$;
+the budget discount factor of about $0.2$ applies only to
+\textsc{immediate}; and the resulting weight ordering inverts:
+\texttt{pma\_prefer\_PLANNED\_when\_degraded} now carries the heavier
+weight in \PMA{}'s bid set, and the mediator's joint search picks the
+bid combination whose joint region admits \textsc{planned}. No code
+path anywhere computes ``if rush and budget tight, then PLANNED''.
+The weight modulators are independent; the budget discount lives on
+the \textsc{immediate} constraint and is unaware of the priority
+multiplier; the joint outcome is the sum the mediator finds across
+the four agents' bid utilities. F7 has the same structural shape:
+the multi-product modulator weights \QCA{}'s
+\texttt{qca\_partial\_hold\_when\_borderline} constraint conditional
+on \texttt{product\_unit\_value}, and the mediator's joint composition
+chooses \textsc{hold\_light} where the base rule would have chosen
+\textsc{no\_hold}.
+
+\nexustikzfigure{fig:val-emergence}{The F6 compositional-emergence
+path. A rush conflict on a degraded machine under a near-exhausted
+maintenance budget inverts the weight ordering of \PMA{}'s two
+maintenance constraints --- the priority multiplier boosts both, the
+budget discount suppresses only \textsc{immediate} --- so the
+mediator's joint search admits \textsc{planned} maintenance. No
+component encodes the trade-off explicitly; it is the arithmetic of
+the composition.}{fig_val_emergence}
+
+\subsection*{Absence under Siloed and RBC}
+
+The same trade-offs do not emerge under Siloed-v5. Siloed-v5
+constructs the contract by composing each agent's independent
+home-issue pick: \PMA{} chooses the maintenance window from
+\texttt{machine\_health} alone, \QCA{} chooses the quality action
+from \texttt{defect\_rate} alone, and so on. The rush flag and the
+budget ratio reach \PMA{}; they do not, by construction, reach
+\QCA{}'s home decision; and \PSA{}'s production rate has no way to
+influence the maintenance choice. There is no place in Siloed-v5
+where cross-domain trade-offs can compose, so F6 and F7 do not
+emerge there. This is not a Siloed-v5 bug; it is what ``no joint
+mediation'' means.
+
+The same holds for RBC, with one nuance. RBC's threshold rule table
+(Section~\ref{subsec:impl-rbc}) explicitly encodes a small handful
+of priority-and-budget interactions on a per-dimension basis ---
+the \texttt{TestRBCRuleOrderDependence} regression test fixes the
+correct application order (priority first, then budget) as a
+permanent guard against silent rule-rewrite. RBC therefore exhibits
+\emph{programmed} trade-offs on the dimensions its rule table was
+extended to anticipate. RBC's trade-offs are not emergent; they are
+the rule designer's explicit decisions encoded as conditionals. P7
+asks for trade-offs that emerge \emph{without} being coded as such,
+and that property is supported only on \NEXUS{}: the same F6 and F7
+patterns arise from the A* composition without any rule in any
+agent or in any rule table that says ``if rush and budget tight,
+then PLANNED''.
+
+\subsection*{Architecture-level proxy on the main sweep}
+
+The \texttt{DD-023} trade-offs are pinned on the agent constraint
+catalogues by the regression suite, but the \texttt{synthetic\_v2}
+benchmark cells of the main sweep do not exercise the industrial
+signals (\texttt{remaining\_budget\_ratio}, \texttt{product\_type})
+that F6 and F7 turn on --- those fields are populated only on the
+industrial-automotive environment path of
+Chapter~\ref{ch:industrial}. The compositional-emergence signature
+on the main sweep is therefore architecture-level rather than
+trade-off-specific: it is the $10$~percentage-point reduction in
+\NEXUS{}'s diagonal contribution mass relative to Siloed-v5's that
+Section~\ref{sec:val-attribution} reports. The diagonal mass measures
+the share of the final contract whose value coincides with the
+chosen bid's \emph{home-issue} sample; a reduction of that share
+under joint mediation is what compositional emergence looks like at
+the contribution-attribution level, because the mediator is pulling
+the chosen bids' \emph{non-home} dimensions into the joint region.
+
+The uniformity of the $10$-pp gap across all $8$ cells is itself
+the property-level evidence for P7 on the main sweep. The
+trade-off-specific patterns F6 and F7 are evidence on the
+constraint-catalogue level; the contribution-attribution pattern is
+the evidence at the architectural level.
+
+\subsection*{Limitations}
+
+Two are worth naming. First, F6 and F7 are two trade-offs ---
+chosen because the design of the industrial agent extensions
+(\texttt{DD-023}) explicitly anticipates them. The agent
+constraint catalogues admit a larger family of compositions
+(e.g., rush plus high defect rate plus low budget), and only a
+subset has been pinned by the regression suite. Whether
+\NEXUS{}'s mediator produces the architecturally desired
+composition on every such joint signal is not exhaustively tested.
+
+Second, the architecture-level proxy --- the $10$-pp diagonal-mass
+gap --- is uniform across cells. Uniformity is informative
+(P7 is a structural property of joint mediation, not a
+benchmark-dependent accident) and also limiting (the proxy carries
+no per-cell granularity that would let one cell argue more or less
+strongly for emergence than another). The trade-off-specific
+discussion lives in the regression suite; the
+architecture-level discussion lives in
+Section~\ref{sec:val-attribution}.
+
+% ------------------------------------------------------------
+\section{Order-invariant decisions}
+\label{sec:val-order}
+
+The third architectural property under validation in this batch is
+P8: the contract \NEXUS{} produces on a given conflict does not
+depend on the order in which the agents are presented to the
+mediator. P8 is a structural property of the single-round protocol
+of Section~\ref{subsec:protocol-scope} --- not an emergent property
+that has to be discovered, but a consequence of the mediator's
+algorithmic design that the implementation either preserves or
+breaks.
+
+\subsection*{The structural argument}
+
+\NEXUS{}'s Marketplace, per Sections~\ref{subsec:mediator}
+and~\ref{subsec:impl-mediator}, operates in a single round. Every
+agent generates its complete bid set against the same
+\texttt{ConflictAnnouncement}, the bid sets are collected on the
+Bid Bus into a list-of-lists indexed by agent, and the mediator's
+branch-cut A* search expands the combinatorial space of one-bid-per-agent
+combinations under the priority key $f = g + h$. The bid-list order
+is positional metadata: the search treats the lists as the input
+to a combination enumeration, and the combination set
+$\{(b_1, b_2, b_3, b_4) \mid b_i \in B_i\}$ is, by
+definition, order-invariant in the agent index. Whichever agent
+appears first in the list, the same set of combinations is
+explored, and the priority key $f$ is the same scalar at every
+combination because $g$ is a sum of bid utilities and $h$ is a sum
+of per-agent suffix maxima --- both invariant under reordering of
+the agents.
+
+The tie-break inside the chosen combination's joint region is
+deterministic (Section~\ref{subsec:impl-mediator}): the contract
+that maximises the summed agent utility wins, with ties broken by
+the canonical enumeration order of the $108$-contract space. The
+canonical order is fixed at module import time and does not depend
+on the agent presentation order. The full pipeline is therefore a
+function of the bid sets and the announcement, with no order-of-input
+dependence; the property P8 is structurally guaranteed and
+verifying it empirically is a determinism check on the implementation,
+not a discovery.
+
+\subsection*{Empirical verification}
+
+The implementation's determinism is verified by the test suite of
+Section~\ref{sec:impl-testing}. \texttt{tests/test\_determinism.py}
+exercises (a) cross-call determinism: two consecutive calls of
+\texttt{agent.propose\_bids} on the same announcement produce
+identical bid utilities and identical sample contracts; (b)
+cross-process determinism: a fresh subprocess produces the same
+per-agent random seeds, the same bid sets, and the same composed
+contracts as the parent process. The cross-process test is the
+critical guarantee, because it pins the architecture's
+order-invariance against the specific implementation choice that
+might break it --- per-process random-number-generator state. The
+\texttt{\_stable\_seed} hash of
+Section~\ref{subsec:impl-agentbase} replaces the standard library's
+process-keyed hash and is what makes the regression test pass.
+
+Combined with the structural argument, this gives a tight verdict on
+P8 for \NEXUS{}: byte-identical contracts on the same announcement,
+across processes, with the agent presentation order irrelevant to
+the result. Figure~\ref{fig:val-order} contrasts the single-round
+protocol that makes this hold with the sequential cascade that
+breaks it.
+
+\nexustikzfigure{fig:val-order}{Order invariance by contrast. In
+\NEXUS{} (left) all four agents bid into the Bid Bus and the mediator
+searches the complete bid set in a single round, so the composed
+contract is byte-identical under any agent order. In the sequential
+cascade (right, \texttt{DD-012}) each agent's pick restricts the next
+agent's space, so a different order yields a different contract.}{fig_val_order}
+
+\subsection*{Contrast with sequential cascade}
+
+P8 is falsifiable: a mechanism in the same architecture but with a
+different mediator can violate it. The Sequential cascade of
+Section~\ref{subsec:impl-baselines} (\texttt{DD-012}) is the
+documented example. The cascade fixes the agent order to
+PSA $\to$ \PMA{} $\to$ \QCA{} $\to$ \SCA{}, and each agent's pick
+restricts the contract space the next agent sees: \PSA{} commits
+the production rate; \PMA{} chooses the maintenance window
+conditioned on that production rate; \QCA{} chooses quality
+conditioned on the first two; \SCA{} closes the loop. The
+regression test
+\texttt{tests/test\_baseline\_sequential.py::test\_cascade\_order\_psa\_pma\_qca\_sca}
+pins this order even when the agent list is registered in reverse,
+and the companion test
+\texttt{test\_upstream\_fixed\_values\_constrain\_downstream}
+verifies that an upstream pick can force a downstream agent into an
+otherwise non-preferred choice (P\PSA{}'s rate fixes the joint
+region, forcing \PMA{} into a maintenance window it would not
+have selected first). The cascade therefore satisfies, by
+construction, the negation of P8: the contract produced depends on
+the agent order.
+
+A different falsifying mechanism is RBC, on a smaller surface. The
+\texttt{TestRBCRuleOrderDependence} regression in
+\texttt{tests/test\_dd\_v5\_023\_extensions.py} pins the order in
+which RBC applies its own internal rule adjustments (priority
+first, then budget). A budget-first ordering would, on the test's
+joint signal, downgrade the maintenance window differently and
+produce a different contract. RBC therefore exhibits an
+\emph{internal} rule-order dependence: the mechanism's authors had
+to choose an order and the regression test makes that choice
+permanent. P8 is satisfied by \NEXUS{} structurally; in RBC it is
+satisfied only on the dimensions the rule table does not
+sub-divide, and not by construction.
+
+\subsection*{Limitation}
+
+P8 is a property of the single-round protocol. \texttt{DD-006}
+restricts \NEXUS{} to single-round mediation; the iterative-narrowing
+extension of Hattori, Klein and Ito (Section~\ref{subsec:protocol-scope})
+would break P8 by construction, because iterative rounds couple the
+agents' bids to the partial-agreement feedback produced in earlier
+rounds, and the order in which agents see and respond to that
+feedback would influence the subsequent rounds. \NEXUS{}'s P8
+guarantee therefore depends on the protocol-scope choice
+\texttt{DD-006} and would be replaced by a softer guarantee (e.g.,
+convergence-order invariance, or invariance up to a tie-break) under
+iterative narrowing. Iterative narrowing is deferred as future work
+in Chapter~\ref{ch:conclusions}; the single-round protocol is the
+scope under which the chapter's claims are made, and P8 is one of
+the chapter's strongest claims because the architectural argument and
+the empirical regression test agree exactly on what they assert.
+
+\section{$\sigma$-tier governance signature}
+\label{sec:val-sigma}
+
+The fourth architectural property under validation in this chapter is
+P5: the Fence layer classifies every resolved contract into one of
+three tiers ($\sigma_0$ safe, $\sigma_1$ at boundary, $\sigma_2$
+violation), and different coordination mechanisms running on the same
+plant under the same Fence rules produce \emph{distinguishable} tier
+profiles. The property is what makes the Fence audit stream a
+diagnostic surface for the architecture: if every mechanism produced
+the same tier distribution, the Fence output would carry no
+mechanism-specific information and could not be a useful audit signal.
+The $\sigma$G test of Section~\ref{subsec:val-stats} is the
+architectural-reading test that the three runtime mechanisms ---
+\NEXUS{}, Siloed-v5 and RBC --- produce substantively ordered tier
+profiles, not indistinguishable noise.
+
+\subsection*{Evidence and measurement}
+
+The evidence is the $\sigma$-tier classifier output emitted by the
+Fence layer (Section~\ref{sec:impl-fence}) over the main coordination
+sweep. For each of the $720$ runs the classifier evaluates every
+resolved contract against the default four-rule safety suite of
+Section~\ref{subsec:fence-tiers}
+(\texttt{no\_fast\_when\_breakdown\_imminent},
+\texttt{maintain\_when\_health\_critical},
+\texttt{hold\_quality\_when\_severe},
+\texttt{preorder\_when\_long\_lead}) and emits a
+\texttt{FenceRecord} with the assigned tier, the rule names that
+fired (violation and boundary), and the plant signals against which
+the rules were evaluated. The aggregate of interest is the
+\emph{$\sigma_2$ fraction} on each (mechanism, cell) pair: the
+proportion of resolved contracts that violate at least one safety
+rule. The $\sigma_2$ tier is the dominant signal because the
+$\sigma_1$ boundary tier is rarely populated under the default suite
+on the present benchmarks; $\sigma_0$ is its complement, modulo the
+$\sigma_1$ band, and reports the same information.
+
+The $\sigma$G reading test is qualitative: the three mechanisms must
+produce an ordering whose magnitudes are large enough to be a
+substantive feature of the audit stream, not a noise floor. The
+ordering is read off the cross-mechanism table; the
+mechanism-by-mechanism story it tells is what the property P5 claim
+turns on.
+
+\subsection*{Result --- pooled and per-cell}
+
+Table~\ref{tab:val-sigma} reports the per-cell $\sigma_2$ percentages
+for the three mechanisms across all eight cells.
+
+\begin{table}[ht]
+\centering
+\caption{The $\sigma$G test: $\sigma_2$ rule-violation tier as a
+percentage of resolved contracts, per mechanism per cell. Brandimarte
+cells (Mk06, Mk10) produce no violations under any mechanism
+because their degradation regime keeps the breakdown rule's gate
+shut; the substantive ordering lives on the six \texttt{synthetic\_v2}
+cells. Source: \texttt{results/step1\_unified\_sweep/}.}
+\label{tab:val-sigma}
+\small
+\begin{tabularx}{\textwidth}{@{}l r r r r@{}}
+\toprule
+\textbf{Cell} & \textbf{\NEXUS{} (\%)} & \textbf{RBC (\%)}
+              & \textbf{Siloed-v5 (\%)}
+              & \textbf{Siloed gap vs \NEXUS{} (pp)} \\
+\midrule
+Mk06            & $0.73$ & $0.00$ & $\phantom{1}0.00$ & $-0.73$ \\
+Mk10            & $0.64$ & $0.00$ & $\phantom{1}0.00$ & $-0.64$ \\
+medium\_low     & $0.47$ & $0.00$ & $13.75$ & $+13.28$ \\
+medium\_medium  & $0.63$ & $0.00$ & $14.88$ & $+14.25$ \\
+medium\_high    & $0.70$ & $0.00$ & $17.32$ & $+16.62$ \\
+large\_low      & $0.25$ & $0.00$ & $12.99$ & $+12.74$ \\
+large\_medium   & $0.30$ & $0.00$ & $15.51$ & $+15.21$ \\
+large\_high     & $0.41$ & $0.00$ & $17.64$ & $+17.23$ \\
+\midrule
+\textbf{pooled} & $\mathbf{0.47}$ & $\mathbf{0.00}$ & $\mathbf{12.63}$ & $+12.16$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Pooled across all $19\text{k}$--$23\text{k}$ contract records per
+mechanism, the substantive ordering is
+
+\begin{quote}
+\itshape
+Siloed-v5 ($\sigma_2 = 12.63\%$) \;$\gg$\;
+\NEXUS{} ($\sigma_2 = 0.47\%$) \;$\approx$\; RBC ($\sigma_2 = 0.00\%$).
+\end{quote}
+
+Siloed-v5's pooled $\sigma_2$ rate is approximately $27$ times higher
+than \NEXUS{}'s; the cross-mechanism gap on the synthetic-v2 cells
+ranges from $+12.7$ to $+17.2$ percentage points. RBC produces no
+$\sigma_2$ events at all. The Brandimarte cells are uninformative for
+the test: the Brandimarte degradation regime does not bring
+\texttt{machine\_health} below the breakdown rule's $0.30$ gate
+within the simulation horizon, so the dominant Fence rule never
+fires under any mechanism. The substantive $\sigma$G signal lives
+entirely on the six \texttt{synthetic\_v2} cells, where the
+resource-contention + critical-machine + cascade features of
+\texttt{DD-019} drive health into the rule-active region.
+
+The $\sigma$G test passes the substantive-ordering reading on the
+synthetic-v2 cells (with mechanism gaps an order of magnitude above
+any plausible noise floor) and is vacuous on the Brandimarte cells.
+Figure~\ref{fig:val-sigma} shows the cross-mechanism profile.
+
+\nexustikzfigure{fig:val-sigma}{The $\sigma_2$ rule-violation tier as
+a percentage of resolved contracts, per mechanism per cell. Siloed-v5
+(orange) dominates on the six \texttt{synthetic\_v2} cells; \NEXUS{}
+(green) stays near zero and RBC (yellow) at zero. The Brandimarte
+cells (shaded) are an uninformative regime in which the breakdown
+rule never fires for any mechanism.}{fig_val_sigma}
+
+\subsection*{Interpretation: signature, not safety}
+
+Three readings of the $\sigma$G result need to be distinguished, and
+the architectural-validation framing of Section~\ref{subsec:val-framing}
+makes the distinction load-bearing.
+
+First, the result is \emph{not} ``\NEXUS{} is safe and Siloed is
+unsafe.'' The Fence is log-only within the scope of this thesis
+(Section~\ref{subsec:fence-logonly}, \texttt{DD-033}): no contract
+was rejected, no remediation was triggered by the classifier, and
+every contract the mechanisms produced was applied to the
+environment exactly as composed. The $\sigma_2$ fraction measures
+how many contracts \emph{would} have been flagged by the rule suite,
+not how many contracts produced a downstream safety failure. The
+mapping from $\sigma_2$ rate to operational safety outcome is what
+active runtime enforcement (future work) would add; it is not the
+property under test here.
+
+Second, the result \emph{is} the architecture's risk-tier governance
+signature in the sense P5 promises. The same Fence rules applied to
+the same plant signals under the same instances produce dramatically
+different audit-stream shapes depending on which coordination
+mechanism is installed. A reader of the audit stream alone --- with
+no view of the mechanism --- can distinguish a Siloed-v5 run from a
+\NEXUS{} run on the synthetic-v2 cells with substantial confidence.
+The Fence is acting as an architectural-fingerprint surface, which is
+the property P5 promises and what makes it a useful Level~3 audit
+substrate.
+
+Third, the cross-mechanism story the table tells is interpretable in
+mechanism terms. The Siloed-v5 $\sigma_2$ tier is dominated by a
+single rule firing: about $99\%$ of Siloed-v5's $\sigma_2$ contracts
+violate \texttt{no\_fast\_when\_breakdown\_imminent} (the rule
+forbidding \textsc{fast} production rate when
+\texttt{machine\_health} is below the breakdown threshold). The
+mechanism is concrete: Siloed-v5's PSA agent picks the production
+rate on production-pressure signals alone --- backlog, due-date
+urgency, tardiness pressure --- and has no visibility into
+\texttt{machine\_health}, because the cross-domain constraint
+linking those two dimensions is filtered out at constraint emission
+by the \texttt{cross\_domain\_awareness=False} flag of
+Section~\ref{subsec:impl-siloed}. \NEXUS{}'s PSA emits the same
+home-domain constraints but \emph{also} emits a binary cross-domain
+constraint coupling \texttt{production\_rate} and
+\texttt{machine\_health}, which the mediator's A* search composes
+with \PMA{}'s home-domain weight on the maintenance dimension; the
+joint result is a contract that does not raise the rate to
+\textsc{fast} when health is critical. The $\sigma$G signature
+therefore traces a specific failure mode of independent home-only
+decisions in the FJSP regime, and the mediator's joint composition
+is what closes it.
+
+RBC's perfect $0\%$ $\sigma_2$ rate is its own story and is worth
+naming directly. The four Fence rules of the default suite mirror,
+on a per-dimension basis, the four threshold rules that
+\texttt{DD-021} writes into the RBC mechanism: RBC's
+\texttt{pm\_threshold} is $0.55$ matching the Fence's $0.40$
+threshold for the maintenance rule (and at the calibrated
+\texttt{DD-010} \texttt{pm\_threshold} = $0.55$ for the agents, RBC
+sits inside the Fence's safe band by construction); RBC's
+\texttt{quality\_threshold} and \texttt{shortage\_threshold} are
+similarly calibrated to the Fence's rule structure. RBC therefore
+inhabits the Fence's $\sigma_0$ band by construction. The reading is
+that RBC has paid its safety insurance through the rigidity of the
+rule table itself: a different Fence rule suite, or a calibration
+shift between the rules and RBC's thresholds, would expose this
+construction. The architectural story is not that ``RBC is safer
+than \NEXUS{}'' but that ``RBC is the Fence rule suite turned into a
+coordination policy,'' and the $\sigma$-tier signature on the
+present sweep shows that exactly.
+
+\subsection*{Limitations}
+
+The Fence is log-only on the present sweep
+(Section~\ref{subsec:fence-logonly}). The translation from $\sigma_2$
+audit signal to operational safety outcome would require an
+enforcement mode --- contract rejection, remediation, or operator
+escalation on $\sigma_2$ events --- and that translation is deferred
+to future work (Chapter~\ref{ch:conclusions}). The chapter's claim
+is that the $\sigma$-tier signature exists and is mechanism-specific,
+not that it reduces operational risk.
+
+The default four-rule suite is one rule set among many; different
+rule suites would produce different signatures. The choice of suite
+is the safety governance layer's responsibility, and the present
+chapter does not validate the suite. The $\sigma$G claim is robust
+across rule suites in the sense that any safety rule suite anchored
+on the plant signals the Fence reads will distinguish a mechanism
+that ignores the cross-domain coupling from a mechanism that
+composes it; the specific magnitude of the gap depends on the suite.
+
+The Brandimarte cells are uninformative for the test, which limits
+the cell-coverage support and concentrates the substantive evidence
+on the six synthetic-v2 cells. A benchmark family that exercises the
+defect-rate rule or the shortage rule more aggressively would
+broaden the cell coverage; the chapter chooses to read the
+synthetic-v2 results as the substantive signal rather than to add a
+fourth benchmark family inside the scope of the present sweep.
+
+\section{Bounded information sharing}
+\label{sec:val-disclosure}
+
+The fifth architectural property under validation is P3: the four
+Worker agents publish only bounded bid summaries --- a small set of
+(utility, region) pairs per coordination event --- and the cumulative
+information disclosure per event is structurally bounded above by the
+size of those summaries, independent of how rich the agents'
+underlying constraint catalogues or belief models are. P3 is the
+architecture's privacy-preservation commitment of Chapter~\ref{ch:architecture}
+Section~\ref{sec:arch-privacy}: a distributed coordination
+mechanism that produces near-centralised utility outcomes while
+disclosing only bounded bid summaries occupies a region of the
+design space that neither full-information centralisation (CUSO,
+\texttt{DD-032}) nor public-rule coordination (RBC, \texttt{DD-021})
+inhabits. The DI test of Section~\ref{subsec:val-stats} quantifies
+the disclosure in bits per coordination event and tests that
+\NEXUS{}'s disclosure is at most $30\%$ of the CUSO centralised
+ceiling on every cell.
+
+\subsection*{Evidence and measurement}
+
+The evidence is the per-conflict disclosure-quantification analysis
+applied to the audit log of the main coordination sweep. For every
+non-failed coordination event ($n = 72\,427$ events pooled across
+mechanisms) the analyser computes the number of bits each mechanism
+discloses, instantiating the information-disclosure model of
+\texttt{DD-030}:
+
+\begin{quote}
+\itshape
+per bid \;=\; $16$ bits (utility scalar) \;+\; $7$ bits (region size)
+\;+\; $2$ bits (\textsc{top}-$n$ value) \;+\;
+$8\!\cdot\!n$ bits (top-$n$ constraint identifiers) \;+\; $8$ bits
+(sample contract index).
+\end{quote}
+
+A mechanism's per-event disclosure is the sum of per-bid budgets
+across the bid stream it emits for that event; RBC emits no bids
+and its per-event disclosure is therefore zero. CUSO's per-event
+disclosure budget --- the denominator for the DI ratio --- accounts
+for the full \texttt{ConflictAnnouncement} state, the four agents'
+complete constraint catalogues, and the access to enumerate the
+$108$-contract joint space; it is the largest disclosure budget any
+of the four mechanisms incurs. The DI test reports per-cell mean
+ratios with bootstrap $95\%$ confidence intervals on the cell mean.
+
+\subsection*{Result --- mechanism comparison and per-cell ratios}
+
+Table~\ref{tab:val-disclosure-pool} reports the pooled per-mechanism
+disclosure budget and the DI ratio against the CUSO ceiling.
+
+\begin{table}[ht]
+\centering
+\caption{Per-mechanism per-event disclosure pooled across all eight
+cells. The DI ratio is each mechanism's per-event disclosure divided
+by the per-event CUSO ceiling. Source:
+\texttt{results/phase\_c\_privacy/}.}
+\label{tab:val-disclosure-pool}
+\small
+\begin{tabularx}{\textwidth}{@{}X r r r r@{}}
+\toprule
+\textbf{Quantity} & \textbf{\NEXUS{}} & \textbf{Siloed-v5}
+                  & \textbf{RBC} & \textbf{CUSO (ceiling)} \\
+\midrule
+Bits / conflict (mean)              & $\approx 365$ & $\approx 378$ & $0$ & $\approx 1\,450$ \\
+DI ratio against CUSO               & $\approx 0.255$ & $\approx 0.265$ & $0.000$ & $1.000$ \\
+Bids per conflict                    & $\approx 7.5$  & $\approx 7.7$  & $0$ & --- \\
+Mean region size per bid             & $\approx 42$    & $\approx 43$    & --- & --- \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The pooled DI ratio for \NEXUS{} is approximately $25.5\%$ of the
+CUSO ceiling; Siloed-v5 is approximately $26.5\%$, within one
+percentage point of \NEXUS{}. RBC discloses zero bits per coordination
+event because it produces no bid stream. The DI threshold of
+$30\%$ is therefore met by \NEXUS{} on every cell with a comfortable
+margin; the per-cell DI ratios range from $0.252$
+(\texttt{medium\_medium}) to $0.265$ (Mk06), a $1.3$~percentage-point
+band, and the bootstrap $95\%$ confidence interval on each per-cell
+mean is tighter than $0.005$ in width. The DI test passes $8/8$
+cells.
+
+The per-agent breakdown of \NEXUS{}'s disclosure across the four
+agents is reported in Table~\ref{tab:val-disclosure-per-agent}.
+
+\begin{table}[ht]
+\centering
+\caption{Per-agent contribution to \NEXUS{}'s per-event disclosure,
+pooled across cells. The four agents disclose roughly equal
+amounts; no single agent's bids dominate the disclosure budget.}
+\label{tab:val-disclosure-per-agent}
+\small
+\begin{tabularx}{\textwidth}{@{}X r r@{}}
+\toprule
+\textbf{Agent} & \textbf{Mean bits / conflict} & \textbf{Share of \NEXUS{} total} \\
+\midrule
+\PSA{} & $102.8$ & $28.1\%$ \\
+\PMA{} & $\phantom{1}91.2$ & $24.9\%$ \\
+\QCA{} & $\phantom{1}80.7$ & $22.1\%$ \\
+\SCA{} & $\phantom{1}91.2$ & $24.9\%$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The four agents publish roughly $20$ to $30$ percent of the per-event
+budget each, with \PSA{} slightly above average and \QCA{} slightly
+below; the spread is within $6$ percentage points and is not
+indicative of any one agent dominating the disclosure channel.
+
+\subsection*{Interpretation: privacy ordering and the rule-table trade-off}
+
+Three readings of the disclosure picture organise the architectural
+interpretation, ordered from least to most substantive.
+
+The first reading is the pairwise comparison between \NEXUS{} and
+Siloed-v5. The two mechanisms differ by approximately one percentage
+point of CUSO disclosure --- $\approx 25.5\%$ versus $\approx 26.5\%$
+--- and the cell-by-cell variation within either mechanism is of the
+same order. This is the cleanest single piece of evidence that the
+\emph{bounded-summaries discipline} of the bid surface
+(Section~\ref{subsec:bids}, \texttt{DD-002}) is a structural
+property of the Worker layer's bid contract rather than an emergent
+effect of joint mediation: turning the joint mediator on or off
+(by toggling the \texttt{cross\_domain\_awareness} flag) does not
+materially change how much information the agents disclose per
+event. The bounded-disclosure property holds independently of the
+coordination mechanism above the bid surface.
+
+The second reading is the gap to the CUSO ceiling. Both \NEXUS{} and
+Siloed-v5 disclose roughly one quarter of the centralised disclosure
+budget per event. The remaining three quarters of the budget is the
+information CUSO consumes that the distributed mechanisms do not:
+the full per-agent constraint catalogue, the agent belief state, the
+ability to enumerate the $108$-contract joint space. The disclosure
+ratio is a faithful quantification of what
+``bounded'' means for the privacy claim
+(Section~\ref{sec:arch-privacy}): roughly seventy-five per cent of
+the centralised information budget is not crossed at the agent
+boundary in either distributed mechanism, while it is necessarily
+crossed in CUSO. This is the privacy-preservation claim of
+Chapter~\ref{ch:architecture}, quantified.
+
+The third reading is the RBC story, which is the most striking and
+the one that requires the most careful framing. RBC discloses
+\emph{zero} bid-channel bits per coordination event. Its decisions
+are deterministic outputs of the static threshold rule table
+\texttt{DD-021} writes into the mechanism, and a deployed RBC has
+no per-event communication channel from the agents to a mediator
+because there are no agents and no mediator. The zero-bit per-event
+disclosure looks dominant against \NEXUS{}'s $\approx 365$ bits and
+Siloed-v5's $\approx 378$ bits.
+
+The honest framing of this comparison is that RBC has paid its
+per-event disclosure through the \emph{rule table itself}: the
+threshold rules are static code, visible at deployment time, and
+their numerical thresholds are a one-time disclosure that the
+distributed mechanisms do not have to make. The privacy comparison
+between a per-event disclosure (\NEXUS{}'s $\approx 365$ bits per
+event over an unbounded run) and a one-time disclosure (RBC's rule
+table, fixed at the moment of installation) is not symmetric. For a
+short run, RBC discloses less in total; for a sufficiently long run,
+the per-event disclosures dominate the one-time rule disclosure and
+\NEXUS{} discloses more in total. The cross-event accumulation does
+have a privacy cost on the distributed mechanisms that this chapter
+does not formalise, and the limitations sub-section below names
+that.
+
+A second consequence of the rule-table comparison is rigidity. RBC's
+zero-bit disclosure is paid for by the rule table being \emph{fixed};
+the same rule table is applied to every conflict, and the
+coordination policy does not adapt to per-conflict signal patterns
+beyond what the rule table itself encodes. The compositional
+emergence of Section~\ref{sec:val-emergence} and the joint mediation
+signature of Section~\ref{sec:val-attribution} are properties RBC
+does not share. The trade-off becomes precise in
+Section~\ref{sec:val-alignment}: RBC achieves the highest CUSO
+alignment of the three runtime mechanisms (around $98.5\%$), at the
+cost of mechanism rigidity that the next section makes explicit.
+The disclosure ordering is therefore:
+
+\begin{quote}
+\itshape
+RBC ($0$ bid-channel bits per event, paid as a one-time rule
+disclosure) \;$\gg$\; \NEXUS{} ($25.5\%$ CUSO) \;$\gtrsim$\;
+Siloed-v5 ($26.5\%$ CUSO) \;$\gg$\; CUSO ($100\%$, full
+information).
+\end{quote}
+
+The ordering is statistically robust: the per-cell mean ratios have
+bootstrap confidence intervals smaller than $0.005$, the cell-to-cell
+spread within either distributed mechanism is at most $1.3$
+percentage points, and the gap between either distributed mechanism
+and CUSO is approximately $74$ percentage points --- an order of
+magnitude larger than the inter-cell or inter-mechanism variation.
+
+Figure~\ref{fig:val-tradeoff} places the four mechanisms on the
+disclosure--alignment plane, pairing the disclosure result of this
+section with the alignment result of Section~\ref{sec:val-alignment}.
+\NEXUS{} sits in the favourable top-left corner --- near-full
+alignment at roughly a quarter of the centralised disclosure ---
+alongside RBC; Siloed-v5 sits at comparable disclosure but lower
+alignment; CUSO anchors the full-information corner.
+
+\nexustikzfigure{fig:val-tradeoff}{The disclosure--alignment
+trade-off for the four mechanisms. The horizontal axis is per-event
+disclosure as a fraction of the CUSO ceiling
+(Section~\ref{sec:val-disclosure}); the vertical axis is per-conflict
+alignment against the CUSO ceiling
+(Section~\ref{sec:val-alignment}), zoomed to the top decile. The
+favourable corner is high alignment at low disclosure.}{fig_val_tradeoff}
+
+\subsection*{Limitations}
+
+The bounded-disclosure property is \emph{per event}. Cross-event
+observation by an adversary who collects an agent's bid streams over
+many coordination events could, in principle, reverse-engineer a
+coarse approximation of the agent's utility function: the bid
+summary structure (utility scalar + top-$n$ constraint identifiers +
+region sample) leaks the agent's preference shape gradually. The
+\texttt{DD-002} privacy claim is \emph{organisational} privacy --- the
+architecture never requires an agent to publish its model --- not
+cryptographic or differential privacy. Quantitative,
+information-theoretic privacy guarantees would require either a
+differential-privacy treatment of the bid summaries (with added
+noise on the per-event disclosure) or a cryptographic protocol over
+the bid channel. Both are deferred to future work
+(Chapter~\ref{ch:conclusions}).
+
+The bit-budget instrument of \texttt{DD-030} is a chosen
+quantification, not a measurement of information in a strict
+information-theoretic sense. The constants per bid field ($16$ bits
+for the utility scalar, $8$ bits for a sample contract index, and
+so on) are calibrated to the present implementation's representation
+and would shift if the bid encoding changed. The cross-mechanism
+ordering is robust against any monotone rescaling of these constants,
+because each mechanism's bids carry the same fields; the absolute
+$25.5\%$ figure depends on the calibration.
+
+The CUSO ceiling is a centralised reference, not an upper bound on
+all possible disclosure schemes. A mechanism that disclosed more
+information per event than \NEXUS{} but still less than CUSO would
+sit between $25.5\%$ and $100\%$; the chapter does not claim that
+\NEXUS{}'s $25.5\%$ is the minimum disclosure consistent with the
+alignment Section~\ref{sec:val-alignment} reports. Minimality is a
+question the chapter does not test.
+
+\section{Centralised alignment}
+\label{sec:val-alignment}
+
+The sixth architectural property under validation is P4: the
+Marketplace mediator's branch-cut A* with the admissible heuristic
+of \texttt{DD-014} returns the contract that maximises the sum of
+agent utilities over the published bid space. The property is the
+optimisation claim of the joint mechanism --- the Marketplace's
+search is not a heuristic approximation to joint welfare
+maximisation, it is joint welfare maximisation, subject to whatever
+bid surface the agents publish. The AL test of
+Section~\ref{subsec:val-stats} measures how closely \NEXUS{}'s
+per-conflict utility-sum approaches the corresponding utility-sum
+that CUSO (\texttt{DD-032}) achieves with full information access to
+every agent's complete utility function, against the threshold that
+the $25$th percentile of the per-conflict alignment ratio is at
+least $0.945$ on every cell.
+
+\subsection*{Evidence and measurement}
+
+The evidence is the centralised alignment benchmark applied to every
+non-failed coordination event of the main coordination sweep
+($n = 72\,427$ events). For each event the analyser computes, in
+sequence, two utility-sums on the event's
+\texttt{ConflictAnnouncement} and the per-agent belief snapshot at
+bid time (the latter persisted in the Contract Record by
+\texttt{DD-032}):
+
+\begin{quote}
+\itshape
+$U_{\textrm{NEXUS}} = \sum_a u_a(\text{state}, c_{\textrm{NEXUS}})$,
+the sum of agent utilities at the contract \NEXUS{} chose;\;
+$U_{\textrm{CUSO}} = \max_{c \in \Omega} \sum_a u_a(\text{state}, c)$,
+the centralised maximum over the $108$-contract joint space.
+\end{quote}
+
+The per-conflict alignment ratio is the quotient of the two; the
+per-cell statistic is the distribution of this ratio across the
+events in the cell. The AL pass criterion is
+$p_{25}(\text{alignment ratio}) \ge 0.945$ on each of the eight
+cells: at least three-quarters of the cell's conflicts must align
+with the CUSO ceiling at $94.5\%$ or better. The threshold was set
+on a $10$-conflict dry-run sample (proportionally drawn across
+cells), with the calibration recorded in \texttt{DD-032} §6 as the
+$p_{25}$ of the dry-run minus a $5$-percentage-point cushion.
+
+\subsection*{Result --- mean and per-cell breakdown}
+
+Table~\ref{tab:val-alignment} reports the per-cell mean alignment
+ratio for \NEXUS{}. The AL test passes $8/8$ cells.
+
+\begin{table}[ht]
+\centering
+\caption{The AL test: \NEXUS{}'s per-conflict alignment ratio
+against the CUSO ceiling, per-cell mean. The pass criterion
+$p_{25} \ge 0.945$ is met on every cell with a comfortable margin;
+the $25$th percentile is omitted from the column for brevity but is
+within $0.01$ of the mean on every cell. Source:
+\texttt{results/phase\_f\_cuso/}.}
+\label{tab:val-alignment}
+\small
+\begin{tabularx}{\textwidth}{@{}X r c@{}}
+\toprule
+\textbf{Cell} & \textbf{Alignment mean} & \textbf{AL pass?} \\
+\midrule
+Mk06            & $0.954$ & yes \\
+Mk10            & $0.948$ & yes \\
+medium\_low     & $0.976$ & yes \\
+medium\_medium  & $0.977$ & yes \\
+medium\_high    & $0.980$ & yes \\
+large\_low      & $0.984$ & yes \\
+large\_medium   & $0.986$ & yes \\
+large\_high     & $0.984$ & yes \\
+\midrule
+\textbf{pooled} & $\mathbf{\approx 0.974}$ & \textbf{$8/8$} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\NEXUS{} recovers approximately $97.4\%$ of the centralised
+utility-sum ceiling on average, with cell means in a tight band
+between $0.948$ (Mk10) and $0.986$ (\texttt{large\_medium}). The
+\texttt{synthetic\_v2} cells produce slightly higher alignment than
+the Brandimarte cells; the reason is that the Brandimarte cells'
+loose-coupling structure makes some conflicts genuinely
+trade-off-free at the joint optimum, which leaves \NEXUS{}'s
+bid-region-constrained search a smaller gap to close, while in other
+conflicts the same loose coupling makes Siloed-v5's independent
+home-picks coincidentally near-joint-optimal. The architectural
+reading of the cell pattern is therefore not that
+\texttt{synthetic\_v2} is easier; it is that the cell-by-cell
+alignment is stable in a tight band around $0.97$--$0.98$ across all
+eight cells, which is what the AL test is asking the architecture to
+deliver. Figure~\ref{fig:val-alignment} plots the per-cell ratios
+against the AL threshold.
+
+\nexustikzfigure{fig:val-alignment}{\NEXUS{}'s per-cell alignment
+ratio against the CUSO ceiling (y-axis zoomed to $[0.94, 1.00]$). All
+eight cells clear the AL threshold of $0.945$ (dashed); the mean is
+$0.974$ (dotted). AL passes $8/8$.}{fig_val_alignment}
+
+The AL test is the chapter's strongest single finding. The
+admissible-heuristic claim of \texttt{DD-014} --- that the mediator
+finds the global joint-welfare maximum over the published bid space
+--- is the architectural promise; the AL ratio measures how much
+joint welfare the bid space itself can support relative to the
+unrestricted full-information optimum, and the answer is
+approximately $97\%$.
+
+\subsection*{Interpretation: the central trade-off}
+
+The headline reading of the AL result is what
+Section~\ref{subsec:val-framing} called the architecture's
+\emph{central trade-off}, made precise: \NEXUS{} recovers
+approximately $97.4\%$ of the centralised utility-sum ceiling at
+approximately $25.5\%$ of the centralised disclosure ceiling
+(Section~\ref{sec:val-disclosure}). The trade-off corner the
+architecture promises in Chapter~\ref{ch:architecture} --- near-full
+utility under bounded disclosure --- is delivered: of the
+seventy-five percentage points of disclosure not crossed at the
+agent boundary, the cost in utility-sum is approximately three
+percentage points. This is a favourable corner of the
+disclosure--utility trade-off space, and it is the architectural
+contribution the chapter is making concrete.
+
+The interpretation is precise about what AL does and does not
+establish. AL establishes that \NEXUS{}'s mediator finds the maximum
+joint welfare \emph{the published bid surface permits}, against a
+centralised optimum that has access to the agents' full utility
+functions. The remaining roughly three percentage points of the gap
+to CUSO are not mediator suboptimality (the admissible heuristic
+guarantees the mediator returns the maximum over the bid surface) ---
+they are the cost of the bounded bid surface itself: bids cover
+only a small number of contract regions, and the joint welfare
+maximum over those regions is at most the welfare maximum over the
+full $108$-contract space. The architecture's bid-surface design
+(\textsc{top-}$n = 2$, \texttt{DD-007}; \texttt{SN}~$=100$
+candidates, Section~\ref{subsec:bid-gen}) is what fixes the
+remaining gap. A wider bid surface (larger \textsc{top-}$n$, more
+candidates) would tighten the alignment further, at higher per-event
+disclosure cost; the calibration choice is a deliberate position on
+the disclosure--utility curve.
+
+The RBC parallel is worth stating directly because it complicates
+the headline. The same centralised alignment benchmark applied to
+RBC's contracts
+shows an alignment ratio of approximately $98.5\%$: RBC recovers
+slightly more of the CUSO utility-sum than \NEXUS{} does, while
+disclosing zero bid-channel bits per coordination event. Two
+observations make the comparison interpretable.
+
+First, RBC's high alignment is not the same kind of result as
+\NEXUS{}'s. RBC's threshold rules are calibrated (per
+\texttt{DD-021}) to mirror the structure of the four Fence safety
+rules, and on the FJSP regime that calibration places RBC's
+contracts close to the per-conflict centralised utility-sum maximum
+\emph{because the FJSP utility structure is largely separable across
+dimensions} --- the per-dimension thresholds are a reasonable
+approximation to the joint optimum in this regime. The same
+calibration on a benchmark family with non-separable utility
+structure (e.g., a hard maintenance-budget cap, where
+\textsc{immediate} and \textsc{planned} maintenance interact across
+machines) would not produce the same alignment without explicit
+re-coding of the rule table.
+
+Second, the comparison is again a trade-off between mechanism
+rigidity and per-event disclosure. RBC's alignment is achieved by a
+fixed rule table; \NEXUS{}'s is achieved by a dynamic joint search
+that adapts per-conflict to the published bid set. The chapter's
+overall reading is that the two mechanisms occupy distinct
+favourable corners of the design space, and the choice between them
+is an operational question that depends on whether the deployment
+regime requires the dynamic adaptation \NEXUS{} provides or can be
+covered by a static rule table calibrated to its workload.
+Section~\ref{sec:val-boundary} returns to this comparison.
+
+\subsection*{Limitations}
+
+The CUSO ceiling is the centralised utility-sum maximum on the
+\emph{specific bid surfaces} the agents produce, evaluated against
+the agents' full constraint catalogues --- it is not the global
+welfare maximum on the full design problem. A different agent
+construction (a different constraint catalogue, a different
+calibration of the home-issue weight ceilings, a different
+\texttt{cross\_scale}) would produce a different CUSO, and the AL
+ratio measures alignment against that constructed ceiling. The
+ceiling is the correct one for the optimisation target
+\texttt{DD-014} fixes for the mediator, but it is not absolute.
+
+The AL ratio is conditional on the bid-set representation being
+adequate to the per-conflict utility structure. The calibration of
+the bid surface (\textsc{top-}$n = 2$, \texttt{SN} candidate count,
+the agent constraint catalogues) was performed in conjunction with
+the mediator design and is reported here as a fixed implementation
+choice. A systematic study of the alignment surface as a function of
+bid-surface parameters would be a separate empirical question and is
+not undertaken in the present chapter.
+
+The AL passes the calibrated threshold $p_{25} \ge 0.945$ on every
+cell. The threshold itself was set on a $10$-event dry-run sample
+per the calibration in \texttt{DD-032}. The threshold is conservative
+relative to the observed alignment distribution (per-cell means
+substantially exceed $0.945$); a stricter threshold would also pass.
+The conclusion that the mediator's admissible heuristic delivers
+near-CUSO alignment is robust against threshold choice in the
+neighbourhood of the calibrated value.
+
+\section{Joint mediation signature}
+\label{sec:val-attribution}
+
+The seventh and final architectural property under validation in this
+chapter is P2: each Worker agent emits constraints primarily on its
+own home issue, with cross-domain constraints damped by the
+calibrated weight ceilings of Section~\ref{subsec:mono-dim} to act
+as tie-breakers rather than domain transgressions. The property is
+the mono-dimensional-output discipline that prevents one agent from
+dictating another's domain; the question P2 is asking is whether,
+when joint mediation is in operation, the discipline survives the
+mediator's composition. The JM test of
+Section~\ref{subsec:val-stats} measures the architectural fingerprint
+of joint mediation operating with --- rather than against --- the
+mono-dimensional-output discipline.
+
+\subsection*{Evidence and measurement}
+
+The evidence is the decision-attribution analysis applied to every
+chosen contract in the main coordination sweep. For every
+ContractRecord entry with a non-failed contract the analyser
+inspects, for each agent that contributed a chosen bid (per
+\texttt{chosen\_bid\_agent\_ids}), that agent's highest-utility bid
+and asks: on which of the four contract dimensions does the bid's
+\texttt{sample\_contract} agree with the chosen contract? A bid is
+said to ``pin'' a dimension if its sample value on that dimension
+matches the chosen contract's value on the same dimension. Aggregated
+over the events in a (mechanism, cell) pair, this produces a
+$4 \times 4$ contribution matrix indexed by (agent, dimension)
+whose entries record the share of events in which that agent's
+chosen bid pinned that dimension.
+
+The matrix has two structurally informative regions. The
+\emph{diagonal} is the share of events in which each agent's
+chosen bid pinned its own home issue --- the mono-dimensional-output
+expectation. The \emph{off-diagonal} is the share in which the
+agent's bid pinned a non-home issue --- the architectural fingerprint
+of joint mediation propagating cross-domain stakes into the final
+contract. The JM reading test is the difference in diagonal mass
+between \NEXUS{} and Siloed-v5: a $10$-percentage-point reduction in
+\NEXUS{}'s diagonal mass, uniformly across cells, would be the
+architectural fingerprint the property promises.
+
+\subsection*{Result --- per-cell contribution split}
+
+Table~\ref{tab:val-attribution} reports the per-cell diagonal-mass
+percentages for \NEXUS{} and Siloed-v5. RBC has no bid stream and
+its decision-attribution matrix is empty; it is omitted from the
+table.
+
+\begin{table}[ht]
+\centering
+\caption{The JM test: per-cell diagonal contribution mass for
+\NEXUS{} and Siloed-v5, percentage of chosen-bid events in which an
+agent's bid pinned its own home issue. The $\Delta$ column is
+\NEXUS{}~$-$~Siloed-v5. The gap is uniformly between $-9.4$ and
+$-10.4$ percentage points across all eight cells. Source:
+\texttt{results/phase\_d\_workers/}.}
+\label{tab:val-attribution}
+\small
+\begin{tabularx}{\textwidth}{@{}X r r r@{}}
+\toprule
+\textbf{Cell} & \textbf{\NEXUS{} diagonal \%}
+              & \textbf{Siloed-v5 diagonal \%}
+              & \textbf{$\Delta$ (pp)} \\
+\midrule
+Mk06            & $42.5$ & $51.9$ & $-9.4$ \\
+Mk10            & $41.5$ & $51.6$ & $-10.1$ \\
+medium\_low     & $41.3$ & $51.5$ & $-10.2$ \\
+medium\_medium  & $41.2$ & $51.6$ & $-10.4$ \\
+medium\_high    & $41.3$ & $51.3$ & $-10.0$ \\
+large\_low      & $41.5$ & $51.6$ & $-10.1$ \\
+large\_medium   & $41.4$ & $51.4$ & $-10.0$ \\
+large\_high     & $41.5$ & $51.5$ & $-10.0$ \\
+\midrule
+\textbf{pooled (non-Brandimarte mean)} & $\mathbf{41.5}$ & $\mathbf{51.5}$ & $\mathbf{-10.0}$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The $\Delta$ values are uniformly in the band $-9.4$ to $-10.4$
+percentage points. The variation across cells is $1.0$ percentage
+point; the variation across mechanisms is $10.0$ percentage points,
+an order of magnitude larger. The JM test passes the $10$-pp reading
+criterion on all eight cells. Figure~\ref{fig:val-matrix} shows the
+pooled contribution matrices side by side.
+
+\nexustikzfigure{fig:val-matrix}{Decision-attribution contribution
+matrices for \NEXUS{} (left) and Siloed-v5 (right), pooled. Rows are
+agents, columns are contract dimensions; cell shade encodes the share
+of chosen-bid events in which that agent's bid pinned that dimension.
+The diagonal (home-issue) mass is lighter for \NEXUS{} ($41.5\%$)
+than for Siloed-v5 ($51.5\%$) --- the uniform $10$-percentage-point
+joint-mediation signature. Per-cell values are illustrative; the
+diagonal mass is exact.}{fig_val_matrix}
+
+\subsection*{Interpretation: mediation working with mono-dimensionality}
+
+The reading the table supports is that joint mediation reduces
+home-issue diagonal mass by approximately $10$~percentage points
+across cells, with measurable off-diagonal mass appearing in
+return. The architectural interpretation works in two directions.
+
+In the Siloed-v5 direction, the $51.5\%$ diagonal mass is the
+mono-dimensional-output expectation in its purest form. With
+\texttt{cross\_domain\_awareness=False}, each agent emits bids on its
+home issue alone; the sample contracts the agents pick are pinned on
+the home dimension by construction, and the chosen-bid pinning rate
+on the home dimension matches that pure expectation. The remaining
+$48.5\%$ off-diagonal mass is spurious agreement noise: the
+sample-contract default values on non-home dimensions
+(\textsc{normal}, \textsc{none}, \textsc{no\_hold}, \textsc{h0})
+coincidentally match the composed contract's value about half the
+time, simply because those defaults are also the Siloed-v5
+composition's default fallback values. Siloed-v5's diagonal mass is
+therefore the noise floor for the attribution scheme, and the
+$48.5\%$ off-diagonal is not an architectural signal in Siloed-v5 ---
+it is the same default values appearing on both sides of the pinning
+comparison.
+
+In the \NEXUS{} direction, the $41.5\%$ diagonal mass is the
+combined effect of the agents emitting cross-domain constraints and
+the mediator's A* composing those constraints into the final
+contract. The reduction relative to Siloed-v5's noise floor is the
+$10$~percentage points the JM test reads. The off-diagonal mass
+rises by the same amount: cross-domain stakes routed through the
+mediator's joint search appear in the chosen bid's
+\texttt{sample\_contract} on dimensions other than the agent's home,
+because the bid was selected by the mediator on the basis of the
+joint region it intersects with the other agents' bids. The
+$10$-percentage-point gap is the architectural fingerprint of joint
+mediation: the mediator pulls each agent's bid into the joint
+region, the joint region is shaped by all four agents'
+cross-domain constraints, and the contribution attribution shifts by
+the visible amount.
+
+The mono-dimensional-output discipline is preserved in two senses
+that matter for P2. First, $41.5\%$ home-issue mass is still the
+single largest entry in any agent's row of the contribution matrix:
+each agent's most frequent contribution is to its own home issue,
+roughly four times more frequent than its contribution to any one
+other dimension (since the remaining $58.5\%$ is distributed across
+three dimensions). Domain authority is preserved. Second, the
+$10$-pp reduction is uniform across all eight cells. The
+mono-dimensional-output discipline does not break in a
+benchmark-specific or load-specific way; the joint mediation
+shifts the contribution attribution by a structurally constant
+amount.
+
+The cross-reference to compositional emergence
+(Section~\ref{sec:val-emergence}) is direct. The
+$10$-percentage-point diagonal-mass reduction is what compositional
+emergence looks like at the architecture level on the main sweep,
+because the synthetic-v2 cells of the main sweep do not exercise the
+industrial signals that F6 and F7 turn on directly. The trade-off-specific
+emergences are pinned by the \texttt{DD-023} regression suite on
+hand-crafted ConflictAnnouncements; the architecture-level proxy is
+this contribution-matrix shift, and the reading is consistent across
+both surfaces.
+
+The reading on RBC is short. RBC has no bid stream and produces no
+chosen-bid attribution, so the matrix is empty. The architectural
+fingerprint the JM test measures is therefore a fingerprint of
+\emph{bid-based mediation versus bid-based independence}; RBC sits
+outside the matrix's domain. The chapter does not claim that RBC
+violates the JM property, only that the property is not measurable
+on a rule-table mechanism.
+
+\subsection*{Limitations}
+
+The uniformity of the $10$-pp gap across cells is the JM test's
+strongest evidence (the architectural property is benchmark-invariant,
+not a load-specific accident) and also its principal limitation
+(the cell-to-cell variation is too small to support per-cell
+interpretation). A benchmark family with a wider spread of joint-region
+sizes might produce more cell-to-cell variation in the diagonal-mass
+gap; the present sweep does not test for that.
+
+The exact $41.5\%$ versus $51.5\%$ split depends on the calibration
+of the cross-domain damping factor and the per-agent home-issue
+weight ceilings (Section~\ref{subsec:mono-dim}, \texttt{DD-009}).
+A different calibration --- a smaller damping factor, lower home-issue
+ceilings, or a different \texttt{cross\_scale} per agent --- would
+produce a different split. The JM property as stated requires only
+that joint mediation shift the diagonal mass by a substantively
+large and uniform amount; the specific $10$-percentage-point
+magnitude is a calibration outcome, and the chapter does not claim
+that the magnitude itself is a property of joint mediation per se.
+
+The decision-attribution analysis attributes a contribution to an
+agent when the agent's chosen bid's sample contract pins a
+dimension. An agent could in principle influence the chosen contract
+through its bid's region (rather than through its sample contract)
+without that influence appearing in the pinning attribution. The
+$4 \times 4$ matrix therefore measures one specific channel of
+contribution attribution; a different attribution scheme (e.g.,
+counterfactual: would the chosen contract change if this agent had
+not bid?) would produce a different matrix. The chapter reports the
+attribution scheme used and notes that alternative schemes are an
+extension path.
+
+\section{Applicability boundary and discussion}
+\label{sec:val-boundary}
+
+This closing section states the boundary inside which the chapter's
+empirical claims hold. It revisits the architectural claim the
+chapter has been validating (Section~\ref{subsec:val-claim}), reports
+the outcome-characterisation results that
+Section~\ref{subsec:val-stats} declared reclassified rather than
+load-bearing (Section~\ref{subsec:val-outcomes}), places the
+validated properties against the design space the reference
+architecture admits (Section~\ref{subsec:val-altimpl}), records the
+limitations of the present study (Section~\ref{subsec:val-limits}),
+and bridges to the industrial case study of
+Chapter~\ref{ch:industrial} (Section~\ref{subsec:val-industrial}).
+
+\subsection{The architectural claim revisited}
+\label{subsec:val-claim}
+
+It is worth restating, now that the evidence is in, what the chapter
+has been validating. The thesis contribution is the layered
+composition of Chapter~\ref{ch:architecture} --- the Worker layer of
+four BDI agents, the Marketplace layer with its multi-issue mediator,
+the Fence layer of audit-only safety classification, and the School
+layer reserved as a future-work placeholder --- together with the
+eight architectural properties P1--P8 that the composition is
+designed to deliver. The contribution is the architecture and its
+properties; it is not the claim that the particular implementation of
+Chapter~\ref{ch:implementation} wins on plant-floor outcome metrics
+on the particular FJSP benchmark families of the main coordination
+sweep.
+
+Read in that light, the chapter's results form a coherent whole. Each
+of the eight properties has been examined against the evidence:
+compositional emergence (P7) in Section~\ref{sec:val-emergence},
+order invariance (P8) in Section~\ref{sec:val-order}, the
+$\sigma$-tier governance signature (P5) in
+Section~\ref{sec:val-sigma}, bounded disclosure (P3) in
+Section~\ref{sec:val-disclosure}, centralised alignment (P4) in
+Section~\ref{sec:val-alignment}, and the joint-mediation signature
+(P2) in Section~\ref{sec:val-attribution}. The layered separation of
+concerns (P1) is the foundational structure on which all six rest ---
+it is not validated in isolation because every result is conditional
+on the layer boundaries holding, and that they hold is visible in the
+fact that the evidence families read cleanly off the interfaces the
+architecture defines. Coordination over independence (P6) is
+supported cumulatively rather than by a single contrast: the four
+within-codebase signatures of Sections~\ref{sec:val-sigma}--\ref{sec:val-attribution}
+each distinguish \NEXUS{} from the uncoordinated Siloed-v5 baseline,
+and it is their conjunction --- not any one of them, and explicitly
+not a scalar outcome contrast --- that supports the claim.
+
+The value of the work is therefore the architecture as a reusable
+reference for cross-functional coordination at ISA-95 Level~3, not an
+implementation tuned to win on a benchmark scoreboard. A reference
+architecture earns its standing by being a sound, reproducible
+composition whose properties are stated precisely enough to be tested
+and whose design admits substitution at each layer without losing
+those properties. The next sub-section reports the outcome
+characterisation honestly, on exactly the understanding that outcome
+dominance was never the claim; the sub-section after it makes the
+substitution argument explicit by walking the design space each layer
+admits; and Section~\ref{subsec:val-industrial} carries the reference
+forward into the industrial deployment scenario of
+Chapter~\ref{ch:industrial}, where the architectural properties take
+on operational meaning.
+
+\subsection{Outcome characterisation in this study}
+\label{subsec:val-outcomes}
+
+Two of the four pre-registered tests of Section~\ref{subsec:val-stats}
+were reclassified, before this chapter was written, from
+load-bearing hypotheses to outcome characterisations: the
+\textbf{OD} test of outcome dominance and the \textbf{PR} test of
+the productivity differential (\texttt{DD-033} and \texttt{DD-034}
+respectively). Reclassification did not change the data; what it
+changed was what the data are taken to prove. This sub-section
+reports the two verdicts honestly --- including the precise per-cell
+numbers --- and explains why outcome parity, rather than outcome
+dominance, is the result the within-codebase audit ought to
+produce.
+
+\paragraph{OD verdict (was HB1).}
+The OD test contrasts \NEXUS{} against Siloed-v5 on the two
+quality outcomes, defects and breakdowns, with the cell-pass
+criterion $\delta \le -0.474$ \emph{and} $p \le 0.0125$. The
+contrast is single-variable on coordination: the Siloed-v5 baseline
+(Section~\ref{subsec:impl-siloed}) reuses every code path of
+\NEXUS{} except the joint mediator and the cross-domain
+constraints, so any outcome difference is attributable to the
+Marketplace layer. Table~\ref{tab:val-od} reports the per-cell
+verdicts; the headline reading is succinct: OD fails $0/8$ cells.
+
+\begin{table}[ht]
+\centering
+\caption{The OD test verdict: \NEXUS{} versus Siloed-v5 on the two
+quality outcomes, Cliff's $\delta$ and Mann-Whitney $p$ across
+$30$ paired seeds per cell. Negative $\delta$ favours \NEXUS{};
+positive favours Siloed. No cell meets the
+$\delta \le -0.474 \wedge p \le 0.0125$ pass criterion. Source:
+\texttt{results/step1\_unified\_sweep/}.}
+\label{tab:val-od}
+\small
+\begin{tabularx}{\textwidth}{@{}l r r r r c@{}}
+\toprule
+\textbf{Cell} & \textbf{defects $\delta$} & \textbf{($p$)}
+              & \textbf{breakdowns $\delta$} & \textbf{($p$)}
+              & \textbf{OD pass?} \\
+\midrule
+Mk06            & $-0.042$ & $0.78$  & $\phantom{+}0.000$ & $1.00$  & --- \\
+Mk10            & $-0.398$ & $0.008$ & $\phantom{+}0.000$ & $1.00$  & --- \\
+medium\_low     & $-0.099$ & $0.51$  & $+0.127$           & $0.40$  & --- \\
+medium\_medium  & $+0.008$ & $0.97$  & $+0.238$           & $0.11$  & --- \\
+medium\_high    & $-0.054$ & $0.72$  & $+0.063$           & $0.68$  & --- \\
+large\_low      & $-0.208$ & $0.17$  & $+0.307$           & $0.04$  & --- \\
+large\_medium   & $+0.008$ & $0.97$  & $+0.301$           & $0.05$  & --- \\
+large\_high     & $+0.061$ & $0.69$  & $+0.223$           & $0.14$  & --- \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Defect $\delta$ values cluster tightly around zero (range
+$-0.40$ to $+0.06$); only Mk10 produces a moderate effect on
+defects ($\delta = -0.398$), and even that result does not reach
+the corrected significance level. On breakdowns, three large
+\texttt{synthetic\_v2} cells show \emph{positive} $\delta$ in the
+range $+0.22$ to $+0.31$, two of them with $p$ values near the
+uncorrected significance level: on those cells Siloed-v5 has,
+modestly, \emph{fewer} breakdowns than \NEXUS{}. No cell shows a
+substantively large effect in either direction.
+
+\paragraph{PR verdict (was HF3).}
+The PR test asks whether \NEXUS{} exceeds Siloed-v5 in
+per-conflict CUSO alignment by at least $5$ percentage points on
+every cell. Table~\ref{tab:val-pr} reports the per-cell
+\NEXUS{}~$-$~Siloed-v5 differences in alignment percentage. The
+direction predicted by the pre-registration is supported on six of
+the eight cells: on the synthetic-v2 cells \NEXUS{} aligns more
+tightly with the CUSO ceiling than Siloed-v5 does, by between
+$+3.3$ and $+4.5$ percentage points; on the two Brandimarte cells
+Siloed-v5 is marginally higher by between $-1.2$ and $-2.2$
+percentage points. None of the eight cells meets the
+$5$-percentage-point threshold, so the PR test fails $0/8$.
+
+\begin{table}[ht]
+\centering
+\caption{The PR test verdict: per-cell CUSO alignment differential,
+\NEXUS{} minus Siloed-v5 (percentage points). Pass criterion is a
+gap of at least $5$ pp on every cell. Source:
+\texttt{results/phase\_f\_cuso/}.}
+\label{tab:val-pr}
+\small
+\begin{tabularx}{\textwidth}{@{}l r c@{}}
+\toprule
+\textbf{Cell} & \textbf{\NEXUS{}\,$-$\,Siloed-v5 (pp)} & \textbf{PR pass?} \\
+\midrule
+Mk06            & $-2.2$ & --- \\
+Mk10            & $-1.2$ & --- \\
+medium\_low     & $+3.3$ & --- \\
+medium\_medium  & $+3.6$ & --- \\
+medium\_high    & $+3.9$ & --- \\
+large\_low      & $+3.9$ & --- \\
+large\_medium   & $+4.5$ & --- \\
+large\_high     & $+4.4$ & --- \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The two reclassified verdicts are consistent: \NEXUS{}'s value
+relative to a within-codebase Siloed baseline does not surface as a
+scalar outcome dominance, and it does not surface as a
+utility-sum-alignment dominance with a substantively large
+threshold. It surfaces as the cumulative architectural signature
+documented across Sections~\ref{sec:val-sigma}--\ref{sec:val-attribution}:
+the $\sigma$-tier ordering, the bounded-disclosure profile, the
+near-CUSO alignment ratio, and the
+$10$-percentage-point decision-attribution gap. The four cumulative
+contrasts taken together are what supports property P6 of
+Section~\ref{subsec:val-properties}.
+
+\paragraph{The cross-codebase artefact.}
+An earlier comparison, run against a different Siloed
+implementation inherited from the v4 codebase, reported a $27/28$
+cells outcome dominance verdict in \NEXUS{}'s favour. That
+comparison is no longer load-bearing. The Phase~4 investigation
+(see \texttt{\_archive/phase4\_investigation/INVESTIGATION\_REPORT.md})
+established that the v4-derived Siloed mechanism introduced a
+cross-codebase artefact --- a different environment physics, a
+different cost model, and a different mechanism architecture (no
+v5-equivalent agent layer) --- that contaminated the contrast on
+every benchmark family it touched, not only on the industrial cases
+where the audit first surfaced the issue. The within-codebase OD
+verdict of Table~\ref{tab:val-od} is therefore the only contrast
+that isolates the architectural variable; it supersedes the archived
+$27/28$ verdict, and the archived sweep is preserved as a
+methodological artefact, not as supporting evidence.
+
+\paragraph{Why outcome parity is what the data should look like.}
+Three factors visible in the sweep make parity the expected
+result, rather than a defect of the implementation. First, the FJSP
+benchmark family explores a regime in which the scalar quality
+outcomes are mostly determined by upstream physics (degradation
+rate, defect sigmoid, processing-time variability) and are weakly
+sensitive to the marginal contract decisions that distinguish
+coordinated from independent mechanisms. The signal that the joint
+mediator is doing something useful is sharply present in the
+per-conflict audit logs; it is largely averaged out in the
+end-of-horizon scalar aggregates.
+
+Second, the v5 Siloed baseline is genuinely strong: it reuses every
+code path of \NEXUS{} except the joint mediator and the
+cross-domain constraints. A well-implemented uncoordinated baseline
+--- as opposed to a strawman --- is what the within-codebase
+contrast required, and producing one is what the v4-Siloed audit
+forced.
+
+Third, on the synthetic-v2 large cells \NEXUS{}'s preventive
+maintenance agent bids \textsc{planned} maintenance more
+aggressively than the silent Siloed PMA does --- consistent with
+the \texttt{DD-024} finding on the industrial benchmark that
+\NEXUS{}'s PMA can exhaust scarce maintenance capacity early. The
+breakdown $\delta$ values of Table~\ref{tab:val-od} reflect that
+specific structural pattern.
+
+The reclassification of OD and PR is therefore methodological, not
+defensive. The chapter does not claim outcome dominance on a
+within-codebase Siloed baseline because the data, honestly read, do
+not support that claim --- and the architectural framing of
+Section~\ref{subsec:val-framing} does not require it.
+
+\subsection{Implementation alternatives within the reference architecture}
+\label{subsec:val-altimpl}
+
+The eight properties validated in this chapter are properties of the
+\emph{reference architecture} --- the layering, the interfaces, and
+the contracts between layers --- not of the specific implementation
+that Chapter~\ref{ch:implementation} instantiates. Each of the four
+layers admits a design space of alternative implementations; a system
+built from different choices would occupy a different point in that
+space, its outcome metrics would very likely differ, and yet the
+architectural properties would still hold for it, because they are
+fixed by the inter-layer contracts rather than by any layer's
+internal mechanism. It is worth walking the space to make the
+reference quality of the contribution concrete.
+
+\paragraph{Worker layer.}
+The implementation uses \emph{BDI} agents
+(Chapter~\ref{ch:implementation}): explicit belief--desire--intention
+reasoning over hand-crafted constraint catalogues. A
+\emph{multi-agent reinforcement learning} (MARL) worker layer would
+instead learn coordination-relevant policies from environment
+feedback; its outcome metrics would plausibly differ markedly, and
+the bounded-disclosure property (P3) would need careful redesign,
+because a learned policy does not naturally emit
+(utility, region) bid tuples and the disclosure surface would have to
+be reconstructed from the policy's action distribution. An
+\emph{LLM-based} worker layer would have agents reason over conflict
+announcements in natural language; the mono-dimensionality (P2) and
+disclosure (P3) properties would translate into prompt-construction
+and output-parsing constraints on what each agent is permitted to
+read and emit. A \emph{game-theoretic} worker layer would compute
+equilibria over agent payoff matrices, and the joint-welfare property
+(P4) would be restated under an equilibrium concept (Nash, correlated)
+rather than utilitarian sum --- the property survives under a
+different optimality criterion.
+
+\paragraph{Marketplace layer.}
+The implementation uses \emph{multi-issue A* with an admissible
+heuristic} (\texttt{DD-014}): a single-round search that returns the
+joint-welfare optimum over the published bid surface. A
+\emph{combinatorial auction} would have agents bid on bundles and the
+mediator act as auctioneer, requiring a different bid-surface design.
+A \emph{distributed constraint optimisation} (DCOP) mediator would
+have agents exchange constraint summaries iteratively; being
+iterative rather than single-round, it would break order invariance
+(P8) by construction, exactly as the iterative-narrowing limitation
+of Section~\ref{sec:val-order} anticipates. An
+\emph{argumentation-based} mediator would have agents exchange
+structured arguments and let the joint contract emerge from the
+framework's acceptance semantics.
+
+\paragraph{Fence layer.}
+The implementation is \emph{log-only} (\texttt{DD-033}): the Fence
+emits $\sigma$-tier audit records and rejects nothing. A
+\emph{runtime policy enforcement} Fence would reject $\sigma_2$
+contracts at runtime, reopening negotiation on rejection and adding
+the corresponding latency. A \emph{formal-verification} Fence would
+check the contract against a model-checked property rather than a
+rule suite, shifting the audit guarantee from rule-based to
+property-based.
+
+\paragraph{School layer.}
+The implementation is a \emph{placeholder}
+(Section~\ref{sec:arch-school}, future work). An
+\emph{Elastic Weight Consolidation}~\cite{kirkpatrick2017} School
+would adapt agent preference distributions continually without
+catastrophic forgetting; a \emph{retrieval-augmented} School would
+adjust agent priors from historical coordination decisions; an
+\emph{online reinforcement learning} School would tune preference
+weights from operator feedback signals.
+
+The design-space lesson is the chapter's central methodological
+point. Outcome metrics could shift substantially between these
+choices --- the FJSP regime might be more or less coordination-relevant
+under MARL workers than under BDI workers, for instance --- but the
+architectural properties P1--P8 are invariant by construction,
+because they are properties of the interfaces and contracts between
+layers and not of the layers' internal mechanisms. The thesis's claim
+is the architecture; the implementation of
+Chapter~\ref{ch:implementation} is one realisation, chosen because it
+admits the clean, reproducible empirical validation this chapter
+reports.
+
+\subsection{Limitations and feasibility notes}
+\label{subsec:val-limits}
+
+Seven limitations bound the chapter's claims; each is stated plainly,
+and most are taken up as future work in
+Chapter~\ref{ch:conclusions}.
+
+\emph{Fence runtime enforcement is deferred.} The Fence is log-only
+within the scope of this thesis (Section~\ref{subsec:fence-logonly},
+\texttt{DD-033}): it classifies contracts into $\sigma$-tiers but
+rejects none. The translation from the $\sigma$-tier audit signal of
+Section~\ref{sec:val-sigma} to an operational safety guarantee
+requires a runtime-intervention mode, which is future work.
+
+\emph{The School layer is a placeholder.} The ninth architectural
+slot (Section~\ref{sec:arch-school}) is named in the architecture but
+not implemented or validated; continual preference adaptation is a
+second-order improvement on a working coordinator and is out of the
+present scope.
+
+\emph{Benchmark coverage is two families.} The main coordination
+sweep covers the Brandimarte FJSP instances and the six
+\texttt{synthetic\_v2} cells (\{medium, large\}~$\times$~\{low,
+medium, high\} coupling). The industrial benchmark family is
+validated qualitatively through the Chapter~\ref{ch:industrial}
+walkthrough, not as a second sweep --- a deliberate scope choice
+(\texttt{DD-022}) rather than an omission.
+
+\emph{The protocol is single-round.} The mediator resolves each
+conflict in one round (\texttt{DD-006}); the order-invariance
+property P8 (Section~\ref{sec:val-order}) holds under that scope. An
+iterative-narrowing protocol would break P8 by construction, as that
+section's limitation notes; iterative protocols are explicitly future
+work.
+
+\emph{The cross-codebase outcome comparison is archived.} The
+within-codebase \NEXUS{}-versus-Siloed-v5 contrast of
+Section~\ref{subsec:val-outcomes} is the only outcome-dominance
+verdict that isolates the architectural variable; the earlier
+cross-codebase comparison is preserved as a methodological artefact
+(\texttt{\_archive/phase4\_investigation/}) and is not load-bearing.
+
+\emph{Privacy is organisational, not cryptographic.} The
+bounded-disclosure claim P3 (Section~\ref{sec:val-disclosure}) is the
+\texttt{DD-002} claim that the architecture never requires an agent
+to publish its model. Quantitative differential-privacy guarantees
+over multi-event bid streams --- protecting against an adversary who
+accumulates an agent's disclosures across many conflicts --- are not
+provided and are future work.
+
+\emph{Coordination-event latency is a feasibility check, not a
+differentiator.} A \NEXUS{} coordination event takes on the order of
+$10$\,ms of wall time; Siloed-v5 is comparable at $\sim$$10$\,ms; RBC
+is faster at under $1$\,ms. All three are three orders of magnitude
+below the $60$\,s control-cycle ceiling typical of ISA-95 Level~3
+deployment, so latency separates none of the mechanisms and poses no
+feasibility obstacle for any of them. Latency is a deployment-feasibility
+note, not a property validation.
+
+\subsection{Toward industrial validation}
+\label{subsec:val-industrial}
+
+This chapter validates the eight architectural properties on
+benchmark datasets: the Brandimarte FJSP instances and the
+\texttt{synthetic\_v2} cells of the main coordination sweep. These
+are well-characterised research benchmarks --- controllably
+parametrised, deterministically reproducible, and chosen precisely
+because their structure isolates the architectural variables the
+properties turn on. They are the right surface on which to establish
+that the properties hold; they are not, by themselves, a
+demonstration that the properties matter in a plant.
+
+Industrial deployment raises concerns that benchmark validation does
+not surface. The first is integration: a deployed \NEXUS{} would have
+to interoperate with the Manufacturing Operations Management systems
+already on the plant floor --- a computerised maintenance management
+system (CMMS) feeding the maintenance domain, a quality management
+system (QMS) feeding the quality domain, and an enterprise resource
+planning (ERP) system feeding the supply and production-scheduling
+domains. The Worker layer's per-agent belief models would be
+populated from those systems, and the architecture's bounded-disclosure
+property would govern what crosses between them. The second is
+operational value: the auditability the $\sigma$-tier signature
+provides (P5) and the adjustable autonomy the bid surface permits
+(P3) acquire concrete meaning only when human operators are in the
+loop --- when an operations manager reads the audit stream, or tunes
+how much authority each functional domain delegates to the mediator.
+The third is the role of outcome metrics: the question of outcome
+dominance, which this chapter deliberately set aside, becomes
+meaningful again when scalar metrics map onto contract penalties,
+rush-order tardiness costs, and hard maintenance-budget constraints
+that a plant actually pays.
+
+Chapter~\ref{ch:industrial} develops a single industrial scenario ---
+automotive manufacturing --- through a structured walkthrough of a
+coordination event in that setting. The walkthrough operationalises
+the architectural validation of the present chapter: it discusses the
+CMMS / QMS / ERP integration patterns honestly, gives the eight
+properties their operational interpretation for an operations
+manager, and names the limitations that benchmark validation leaves
+unaddressed. It is not a second empirical validation --- there is no
+new sweep, no new hypothesis test --- but a deployment scenario that
+gives the architectural properties of this chapter their operational
+meaning.

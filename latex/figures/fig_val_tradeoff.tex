@@ -1,0 +1,49 @@
+% Figure 5.5: disclosure-vs-alignment trade-off, four mechanisms.
+% x = disclosure (% CUSO), 0..100 mapped to 0..13 cm  (factor 0.13)
+% y = alignment  (% CUSO), 90..100 mapped to 0..5 cm  (factor 0.5, offset 90)
+\begin{tikzpicture}[nx,
+  pt/.style={circle,draw,thick,minimum size=3.2mm,inner sep=0},
+  lbl/.style={font=\sffamily\footnotesize,align=center},
+]
+  % ---- axes ----
+  \draw[-{Latex[length=2mm]},nxGray] (-0.3,0) -- (14.0,0)
+        node[right,font=\sffamily\scriptsize]{disclosure (\% of CUSO ceiling)};
+  \draw[-{Latex[length=2mm]},nxGray] (0,-0.3) -- (0,5.8)
+        node[above,font=\sffamily\scriptsize]{alignment (\% of CUSO ceiling)};
+  % x ticks
+  \foreach \d in {0,25,50,75,100}{
+    \pgfmathsetmacro{\x}{\d*0.13}
+    \draw[nxGray] (\x,-0.08) -- (\x,0.08);
+    \node[font=\sffamily\scriptsize,nxGray,below] at (\x,-0.1) {\d};
+  }
+  % y ticks (zoomed 90..100)
+  \foreach \a in {90,92,94,96,98,100}{
+    \pgfmathsetmacro{\y}{(\a-90)*0.5}
+    \draw[nxGray] (-0.08,\y) -- (0.08,\y);
+    \node[font=\sffamily\scriptsize,nxGray,left] at (-0.1,\y) {\a};
+  }
+  \node[font=\sffamily\scriptsize\itshape,nxGray] at (0.7,-0.75) {(y-axis zoomed)};
+
+  % ---- favourable corner shading (top-left) ----
+  \fill[nxGreen!12] (0,3.5) rectangle (4.5,5.2);
+  \node[font=\sffamily\scriptsize\itshape,nxGreen] at (2.2,4.9)
+        {favourable corner};
+
+  % ---- points ----
+  % RBC (0, 98.5)
+  \node[pt,draw=nxYellow,fill=nxYellowBg] (rbc) at (0,4.25) {};
+  \node[lbl,nxYellow,right=2mm of rbc,align=left]
+        {\textbf{RBC}\\\nxsmall 0\% disclosure,\\\nxsmall $\approx$98.5\% align (static rules)};
+  % NEXUS (25.5, 97.4)
+  \node[pt,draw=nxRed,fill=nxRedBg,minimum size=4mm] (nex) at (3.32,3.7) {};
+  \node[lbl,nxRed,below right=0.5mm and 1mm of nex,align=left]
+        {\textbf{NEXUS}\\\nxsmall $\approx$25.5\% disclosure,\\\nxsmall $\approx$97.4\% align (joint A*)};
+  % Siloed (26.5, 94)
+  \node[pt,draw=nxGray,fill=nxGrayBg] (sil) at (3.45,2.0) {};
+  \node[lbl,nxGray,right=2mm of sil,align=left]
+        {\textbf{Siloed-v5}\\\nxsmall $\approx$26.5\% disclosure,\\\nxsmall lower align (no coordination)};
+  % CUSO (100, 100)
+  \node[pt,draw=nxBlue,fill=nxBlueBg] (cuso) at (13,5.0) {};
+  \node[lbl,nxBlue,below left=0.5mm and 1mm of cuso,align=right]
+        {\textbf{CUSO}\\\nxsmall full-information\\\nxsmall ceiling};
+\end{tikzpicture}

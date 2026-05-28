@@ -26,3 +26,4 @@ latex/figures/*.pdf
 
 # --- OS ---
 .DS_Store
+word/*.pdf

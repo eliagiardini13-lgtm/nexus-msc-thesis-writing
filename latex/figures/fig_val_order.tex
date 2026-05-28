@@ -1,0 +1,52 @@
+% Figure 5.3: order invariance --- NEXUS single-round vs sequential cascade.
+\begin{tikzpicture}[nx,
+  ag/.style={draw=nxGreen,thick,rounded corners=2pt,fill=nxGreenBg,
+             align=center,font=\sffamily\scriptsize,
+             minimum width=1.5cm,minimum height=0.7cm},
+  hub/.style={draw=nxRed,thick,rounded corners=3pt,fill=nxRedBg,
+              align=center,font=\sffamily\footnotesize,
+              minimum width=3.0cm,minimum height=0.9cm},
+  cas/.style={draw=nxGray,thick,rounded corners=2pt,fill=white,
+              align=center,font=\sffamily\scriptsize,
+              minimum width=3.6cm,minimum height=0.8cm},
+  outbox/.style={draw,thick,rounded corners=3pt,align=center,
+              font=\sffamily\scriptsize,minimum width=3.2cm,minimum height=0.85cm},
+  flow/.style={-{Latex[length=2.2mm]},thick,nxGray},
+]
+  % ===== LEFT: NEXUS single-round =====
+  \node[font=\sffamily\small\bfseries,nxGreen] at (-4.3,4.5) {\NEXUS{} (single round)};
+  \node[ag] (psa) at (-6.4,3.4) {PSA};
+  \node[ag] (pma) at (-5.0,3.4) {PMA};
+  \node[ag] (qca) at (-3.6,3.4) {QCA};
+  \node[ag] (sca) at (-2.2,3.4) {SCA};
+  \node[draw=nxBlue,thick,rounded corners=2pt,fill=nxBlueBg,
+        font=\sffamily\scriptsize,minimum width=5.0cm,minimum height=0.6cm]
+        (bus) at (-4.3,2.2) {Bid Bus --- complete bid set};
+  \node[hub] (med) at (-4.3,1.0) {Mediator A*};
+  \node[outbox,draw=nxGreen,fill=nxGreenBg] (lout) at (-4.3,-0.3)
+        {composite contract};
+  \foreach \a in {psa,pma,qca,sca}{\draw[flow,nxGreen] (\a) -- (bus);}
+  \draw[flow] (bus) -- (med);
+  \draw[flow,nxGreen] (med) -- (lout);
+  \node[font=\sffamily\scriptsize\itshape,nxGreen,align=center,text width=5cm]
+        at (-4.3,-1.4)
+        {byte-identical contract under any agent order\\(order-invariant by construction, OI)};
+
+  % ===== divider =====
+  \draw[nxGray,dashed,thick] (0,4.7) -- (0,-1.9);
+
+  % ===== RIGHT: sequential cascade =====
+  \node[font=\sffamily\small\bfseries,nxGray] at (4.3,4.5) {Sequential cascade (DD-012)};
+  \node[cas] (c1) at (4.3,3.4) {PSA $\to$ commits production\_rate};
+  \node[cas] (c2) at (4.3,2.4) {PMA $\to$ maint, given PSA};
+  \node[cas] (c3) at (4.3,1.4) {QCA $\to$ quality, given PSA,\,PMA};
+  \node[cas] (c4) at (4.3,0.4) {SCA $\to$ supply, closes};
+  \draw[flow] (c1) -- (c2);
+  \draw[flow] (c2) -- (c3);
+  \draw[flow] (c3) -- (c4);
+  \node[outbox,draw=nxGray,fill=white] (rout) at (4.3,-0.7) {contract};
+  \draw[flow] (c4) -- (rout);
+  \node[font=\sffamily\scriptsize\itshape,nxRed,align=center,text width=5cm]
+        at (4.3,-1.6)
+        {each pick restricts the next agent's space:\\a different order yields a different contract};
+\end{tikzpicture}

@@ -5,6 +5,45 @@ WHAT changed, WHY, and WHERE.
 
 ---
 
+## 2026-05-27/28 — Chapter 5 (Validation) drafted in full
+
+**WHAT.** Drafted Chapter 5 end to end: methodology (§5.1) plus seven
+property-validation sections (§5.2–§5.7) and the applicability-boundary
+discussion (§5.8 with five sub-sections). ~14,000 words, 37 PDF pages,
+7 TikZ figures, 9 tables.
+
+**WHY.** Chapter 5 is the empirical core of the thesis, framed as
+architectural validation (not outcome dominance) per DD-034.
+
+**WHERE.**
+- `latex/chapters/05_results.tex` — full chapter. §5.1 methodology with
+  the thesis-facing test-label glossary (OD/AL/DI/PR/σG/OI/CE/JM,
+  Table 5.3); §5.2 compositional emergence (CE); §5.3 order invariance
+  (OI); §5.4 σ-tier governance (σG); §5.5 bounded disclosure (DI);
+  §5.6 centralised alignment (AL); §5.7 joint mediation (JM); §5.8
+  applicability boundary (architectural claim, outcome characterisation
+  absorbing the OD/PR verdicts, design-space alternatives, limitations,
+  bridge to Chapter 6).
+- `latex/figures/fig_val_{stack,emergence,order,sigma,tradeoff,alignment,matrix}.tex`
+  — 7 new TikZ figures.
+- `latex/bibliography/nexus.bib` — bibliography updated (hart1968astar +
+  industrial-FJSP references); the activated `\cite{hart1968astar}` in
+  Chapter 3 depends on it.
+- `.gitignore` — also ignore `word/*.pdf` (generated review exports).
+
+**Refactor (this batch).** Eliminated the standalone outcome-dominance
+§5.2; renumbered §5.3–§5.9 → §5.2–§5.8; moved the outcome-parity
+discussion into §5.8.2; introduced the descriptive test labels in place
+of the internal H-codes.
+
+**Build status.** LaTeX clean (105 pages; 0 undefined refs, 0
+multiply-defined labels, 0 errors). Consistency verified: no internal
+codes (H-codes, Phase A–F, Step 1, DD-V5-NNN) leak into prose outside
+the glossary and the one §5.1.3 explanatory note. Review exports
+regenerated to `word/05_results_2026-05-27.{docx,pdf}` (git-ignored).
+
+---
+
 ## 2026-05-26 — Test-count reconciliation across Chapters 3 and 4 (generic formulation)
 
 **WHAT.** Replaced all specific test-count numbers in Chapters 3 and 4

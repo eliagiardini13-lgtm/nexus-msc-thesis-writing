@@ -1,0 +1,45 @@
+% Figure 5.1: the 4-layer architectural stack alongside the 5 evidence families.
+\providecommand{\evtagmacro}[1]{{\sffamily\scriptsize\bfseries\color{nxBlue}#1}}
+\begin{tikzpicture}[nx,
+  layer/.style={draw,thick,rounded corners=4pt,align=center,
+                font=\sffamily\footnotesize,
+                minimum width=5.0cm,minimum height=1.05cm},
+  prop/.style={font=\sffamily\scriptsize\bfseries,nxGray,align=center},
+  evbox/.style={draw=nxBlue,thick,rounded corners=3pt,fill=white,align=left,
+                font=\sffamily\footnotesize,
+                minimum width=6.2cm,minimum height=1.05cm,inner sep=5pt},
+  % evtag is rendered inline as a coloured small-caps tag.
+]
+  % ---- 4-layer architectural stack (left column) ----
+  \node[layer,fill=nxGreenBg,draw=nxGreen]      (work) at (-5.2, 3.1)
+        {\textbf{Worker} layer\;\small(P1, P2)};
+  \node[layer,fill=nxRedBg,draw=nxRed]          (mkt)  at (-5.2, 1.7)
+        {\textbf{Marketplace} layer\;\small(P3, P4, P7, P8)};
+  \node[layer,fill=nxOrangeBg,draw=nxOrange]    (fnc)  at (-5.2, 0.3)
+        {\textbf{Fence} layer\;\small(P5)};
+  \node[layer,fill=nxGrayBg,draw=nxGray,dashed] (sch)  at (-5.2,-1.1)
+        {\textbf{School} layer \,\itshape(future work)};
+  \node[font=\sffamily\scriptsize\itshape,nxGray,align=center]
+        at (-5.2,-2.0) {(cross-cutting: P6)};
+
+  % ---- 5 evidence families (right column) ----
+  \node[evbox] (ms) at ( 3.0, 3.1)
+        {\textbf{Main coordination sweep} \hfill \evtagmacro{P5, P6, P7, P8}\\
+         \nxsmall 720 runs $\cdot$ 3 mechanisms $\cdot$ 8 cells};
+  \node[evbox] (att) at ( 3.0, 1.7)
+        {\textbf{Decision attribution analysis} \hfill \evtagmacro{P2}\\
+         \nxsmall 4$\times$4 contribution matrix per mechanism};
+  \node[evbox] (ca)  at ( 3.0, 0.3)
+        {\textbf{Centralized alignment benchmark} \hfill \evtagmacro{P4}\\
+         \nxsmall full-information ceiling (CUSO), per-conflict};
+  \node[evbox] (dq)  at ( 3.0,-1.1)
+        {\textbf{Disclosure quantification} \hfill \evtagmacro{P3}\\
+         \nxsmall bits-per-event, four mechanisms};
+  \node[evbox] (lat) at ( 3.0,-2.5)
+        {\textbf{Coordination-event latency} \hfill \evtagmacro{\S\,5.9.4}\\
+         \nxsmall wall-time per event, ISA-95 L3 deployment ceiling};
+
+  % ---- column headings ----
+  \node[font=\sffamily\small\bfseries] at (-5.2, 4.2) {Architectural layers};
+  \node[font=\sffamily\small\bfseries] at ( 3.0, 4.2) {Evidence families};
+\end{tikzpicture}
