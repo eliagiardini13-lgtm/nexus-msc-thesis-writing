@@ -40,7 +40,7 @@ These entries are kept as "available options" until the relevant chapter is draf
 | `garey1976nphard` | Ch2 if NP-hardness is discussed; else remove |
 | `hooker1995testing` | Ch2 or Ch5 (methodology); unclear |
 | `safra2024wiring` | §5.8.3 safety alternatives; verify when drafting |
-| `sargent2013verification` | Ch4 verification methodology; verify |
+| ~~`sargent2013verification`~~ | moved to Ch4 confirmed (2026-05-29) |
 | `parasuraman2000` | Ch7 adjustable autonomy / human factors; verify |
 | `agarwal2021precipice` | Unclear use; verify |
 | `dacol2022cp` | Ch2 constraint programming methodology; verify |
@@ -102,9 +102,10 @@ These entries are kept as "available options" until the relevant chapter is draf
 
 Coverage already complete (27 cited entries, see top).
 
-### Chapter 4 — Implementation (1 entry to add)
+### Chapter 4 — Implementation (2 entries — both cited 2026-05-29)
 
-`law2000simulation` — simulation modeling foundation (justifying SimPy choice)
+`law2000simulation` — simulation modeling foundation (justifying SimPy choice); cited in §Simulation Framework.
+`sargent2013verification` — simulation-model verification & validation methodology; cited in §Determinism and reproducibility. (Moved here from "Decide at end" on 2026-05-29.)
 
 ### Chapter 5 — §5.8.3 Implementation alternatives (citations to add)
 

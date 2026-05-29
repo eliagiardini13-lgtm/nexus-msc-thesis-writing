@@ -139,9 +139,12 @@ audit logs. The implementation defaults to deterministic greedy search
 inside the bid-generation pipeline, having found in calibration that the
 simulated-annealing alternative makes no measurable difference at the
 scale of the joint contract space (\texttt{DD-008}). Determinism is the
-property that makes the test suite of Section~\ref{sec:impl-testing}
-operate by byte-for-byte regression rather than by statistical
-inspection.
+substrate on which simulation-model verification
+rests~\cite{sargent2013verification}: reproducible runs make it
+possible to verify each component's behaviour against expected
+outputs, which is what lets the test suite of
+Section~\ref{sec:impl-testing} operate by byte-for-byte regression
+rather than by statistical inspection.
 
 The remainder of the chapter walks through the layers in the order they
 participate in a coordination event: the Worker layer in
@@ -1040,8 +1043,10 @@ synthetic state through a controlled interface.}{fig_impl_benchmark}
 
 The simulation framework is the discrete-event substrate against which
 the architecture is evaluated. It lives in \texttt{src/environment/}
-and is implemented on top of \texttt{simpy}, the standard Python
-discrete-event simulation library. The framework is independent of the
+and is implemented on top of \texttt{simpy}, a standard Python
+discrete-event simulation library, following the discrete-event
+modelling methodology of Law and Kelton~\cite{law2000simulation}. The
+framework is independent of the
 choice of mechanism: \NEXUS{}, Siloed, RBC and CUSO all run on the same
 environment, and the environment never inspects which mechanism is
 installed beyond the protocol surface
