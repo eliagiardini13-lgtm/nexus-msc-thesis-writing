@@ -5,6 +5,35 @@ WHAT changed, WHY, and WHERE.
 
 ---
 
+## 2026-05-29 — Cross-chapter consistency fixes (Ch3 ↔ Ch5)
+
+**WHAT.** Three fixes closing textual gaps between Chapter 3's
+architectural promises and Chapter 5's property-validation claims,
+surfaced by a cross-chapter audit.
+
+**WHY.** Chapter 5 validates properties P7 (compositional emergence)
+and P8 (order invariance) that Chapter 3 implied but did not state
+explicitly; and Table 5.1's P7 row cited a Chapter 4 label as a
+Chapter 3 promise location.
+
+**WHERE.**
+- `latex/chapters/03_architecture.tex` — §3.4 (\texttt{subsec:mediator}):
+  new paragraph stating compositional emergence as a property of the
+  admissible A* composition (P7 anchor, +106 words). §3.4
+  (\texttt{subsec:protocol-scope}): new paragraph stating order
+  invariance as a structural consequence of the single-round protocol
+  (P8 anchor, +91 words). Both forward-reference Chapter~5.
+- `latex/chapters/05_results.tex` — Table 5.1 P7 row: removed the
+  incorrect `sec:impl-baselines` (Chapter 4) reference, leaving the
+  Chapter 3 promise as `subsec:mediator` only.
+
+**Build status.** LaTeX clean (106 pages; 0 undefined refs, 0
+multiply-defined labels, 0 errors). Dated review exports regenerated:
+`word/{03_architecture,05_results}_2026-05-29.{docx,pdf}`; the
+`05_results_2026-05-27.*` exports are kept for diff comparison.
+
+---
+
 ## 2026-05-27/28 — Chapter 5 (Validation) drafted in full
 
 **WHAT.** Drafted Chapter 5 end to end: methodology (§5.1) plus seven

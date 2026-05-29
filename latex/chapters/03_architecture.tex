@@ -814,6 +814,18 @@ architectures: a claimed property --- here, ``the mediator maximises
 joint welfare'' --- is only as good as the algorithm that is supposed
 to deliver it, and the two must be verified to agree.
 
+A consequence of the admissible search is that cross-functional
+trade-off patterns are not programmed into any single component. The
+agents' constraint catalogues encode weighted preferences over their
+home and peer issues; the mediator's A* composition resolves them into
+a single composite contract under the social-welfare objective of
+Equation~\eqref{eq:welfare}. Whatever joint pattern the resulting
+contracts exhibit --- a deferred maintenance window under
+rush-and-budget pressure, a partial quality hold on a premium variant
+near the defect threshold --- emerges from the structural arithmetic of
+the search, not from a special-case rule. This compositional-emergence
+property is validated on concrete cases in Chapter~\ref{ch:results}.
+
 Figure~\ref{fig:arch-mediator} illustrates the search on a small
 example. Algorithm~\ref{lst:mediator} gives the procedure in pseudocode.
 
@@ -902,6 +914,17 @@ narrowing would add round management, convergence criteria and an
 agent-side refinement strategy for no gain at the demonstrated scale.
 The extension is a clean future-work item and is revisited in
 Chapter~\ref{ch:conclusions}.
+
+The single-round protocol has a structural consequence worth stating
+explicitly: the contract \NEXUS{} produces is invariant under any
+permutation of the order in which the agents are presented to the
+mediator. Because every agent bids against the same announcement and
+the mediator's A* search operates on the complete bid set in a single
+pass --- with a deterministic tie-break within the chosen joint region
+(Section~\ref{subsec:mediator}) --- the contract is a function of the
+bid sets and the announcement alone, with no order-of-input
+dependence. This order-invariance property is verified empirically in
+Chapter~\ref{ch:results}.
 
 \paragraph{Why multi-issue mediation rather than a single-winner mechanism.}
 The Marketplace mechanism was selected from a field of candidate
